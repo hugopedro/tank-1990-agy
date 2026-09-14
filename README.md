@@ -23,7 +23,9 @@ Você pode abrir o jogo de duas formas:
 
 ## 🕹️ Controles e Atalhos de Teclado
 
-> 📖 **Guia Completo:** O manual detalhado de regras, balística e todos os power-ups está disponível em [COMANDOS_E_REGRAS.md](file:///home/Hugo/tank1990/COMANDOS_E_REGRAS.md).
+> 📖 **Manuais e Guias:**
+> - [COMANDOS_E_REGRAS.md](file:///home/Hugo/tank1990/COMANDOS_E_REGRAS.md): Manual completo de regras, itens, joystick Xbox 360 e atalhos.
+> - [COMO_JOGAR_ONLINE.md](file:///home/Hugo/tank1990/COMO_JOGAR_ONLINE.md): Guia passo a passo para jogar com amigos à distância (GitHub Pages, túneis e código P2P).
 
 ### Atalhos Rápidos Globais (Modo Tela Cheia)
 - **`G`:** Alterna em tempo real entre o visual **`✨ MODERNO 2D`** e o **`🕹️ CLÁSSICO NES`**.
