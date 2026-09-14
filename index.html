@@ -80,12 +80,22 @@
         const press = (e) => {
           e.preventDefault();
           window.soundSystem.resume();
-          game.p1Input[inputProp] = true;
+          if (game.keysP1) {
+            game.keysP1[inputProp] = true;
+            game.syncInputs();
+          } else {
+            game.p1Input[inputProp] = true;
+          }
         };
 
         const release = (e) => {
           e.preventDefault();
-          game.p1Input[inputProp] = false;
+          if (game.keysP1) {
+            game.keysP1[inputProp] = false;
+            game.syncInputs();
+          } else {
+            game.p1Input[inputProp] = false;
+          }
         };
 
         elem.addEventListener('touchstart', press, { passive: false });

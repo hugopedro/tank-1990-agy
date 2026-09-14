@@ -64,7 +64,9 @@ class Game {
     // Freeze timer (from Clock powerup)
     this.enemyFreezeTimer = 0;
 
-    // Input States
+    // Input States (Keyboard / Touch vs Combined)
+    this.keysP1 = { up: false, right: false, down: false, left: false, fire: false };
+    this.keysP2 = { up: false, right: false, down: false, left: false, fire: false };
     this.p1Input = { up: false, right: false, down: false, left: false, fire: false };
     this.p2Input = { up: false, right: false, down: false, left: false, fire: false };
 
@@ -183,20 +185,21 @@ class Game {
       }
 
       // Player 1: WASD + Space / J (or Arrows if single player)
-      if (e.key === 'w' || e.key === 'W' || (!this.isTwoPlayer && e.key === 'ArrowUp')) this.p1Input.up = true;
-      if (e.key === 'd' || e.key === 'D' || (!this.isTwoPlayer && e.key === 'ArrowRight')) this.p1Input.right = true;
-      if (e.key === 's' || e.key === 'S' || (!this.isTwoPlayer && e.key === 'ArrowDown')) this.p1Input.down = true;
-      if (e.key === 'a' || e.key === 'A' || (!this.isTwoPlayer && e.key === 'ArrowLeft')) this.p1Input.left = true;
-      if (e.key === ' ' || e.key === 'j' || e.key === 'J') this.p1Input.fire = true;
+      if (e.key === 'w' || e.key === 'W' || (!this.isTwoPlayer && e.key === 'ArrowUp')) this.keysP1.up = true;
+      if (e.key === 'd' || e.key === 'D' || (!this.isTwoPlayer && e.key === 'ArrowRight')) this.keysP1.right = true;
+      if (e.key === 's' || e.key === 'S' || (!this.isTwoPlayer && e.key === 'ArrowDown')) this.keysP1.down = true;
+      if (e.key === 'a' || e.key === 'A' || (!this.isTwoPlayer && e.key === 'ArrowLeft')) this.keysP1.left = true;
+      if (e.key === ' ' || e.key === 'j' || e.key === 'J') this.keysP1.fire = true;
 
       // Player 2: Arrow Keys + Enter / Numpad 0
       if (this.isTwoPlayer) {
-        if (e.key === 'ArrowUp') this.p2Input.up = true;
-        if (e.key === 'ArrowRight') this.p2Input.right = true;
-        if (e.key === 'ArrowDown') this.p2Input.down = true;
-        if (e.key === 'ArrowLeft') this.p2Input.left = true;
-        if (e.key === 'Enter' || e.key === '0') this.p2Input.fire = true;
+        if (e.key === 'ArrowUp') this.keysP2.up = true;
+        if (e.key === 'ArrowRight') this.keysP2.right = true;
+        if (e.key === 'ArrowDown') this.keysP2.down = true;
+        if (e.key === 'ArrowLeft') this.keysP2.left = true;
+        if (e.key === 'Enter' || e.key === '0') this.keysP2.fire = true;
       }
+      this.syncInputs();
     });
 
     window.addEventListener('keyup', e => {
@@ -205,21 +208,46 @@ class Game {
       }
 
       // Player 1
-      if (e.key === 'w' || e.key === 'W' || (!this.isTwoPlayer && e.key === 'ArrowUp')) this.p1Input.up = false;
-      if (e.key === 'd' || e.key === 'D' || (!this.isTwoPlayer && e.key === 'ArrowRight')) this.p1Input.right = false;
-      if (e.key === 's' || e.key === 'S' || (!this.isTwoPlayer && e.key === 'ArrowDown')) this.p1Input.down = false;
-      if (e.key === 'a' || e.key === 'A' || (!this.isTwoPlayer && e.key === 'ArrowLeft')) this.p1Input.left = false;
-      if (e.key === ' ' || e.key === 'j' || e.key === 'J') this.p1Input.fire = false;
+      if (e.key === 'w' || e.key === 'W' || (!this.isTwoPlayer && e.key === 'ArrowUp')) this.keysP1.up = false;
+      if (e.key === 'd' || e.key === 'D' || (!this.isTwoPlayer && e.key === 'ArrowRight')) this.keysP1.right = false;
+      if (e.key === 's' || e.key === 'S' || (!this.isTwoPlayer && e.key === 'ArrowDown')) this.keysP1.down = false;
+      if (e.key === 'a' || e.key === 'A' || (!this.isTwoPlayer && e.key === 'ArrowLeft')) this.keysP1.left = false;
+      if (e.key === ' ' || e.key === 'j' || e.key === 'J') this.keysP1.fire = false;
 
       // Player 2
       if (this.isTwoPlayer) {
-        if (e.key === 'ArrowUp') this.p2Input.up = false;
-        if (e.key === 'ArrowRight') this.p2Input.right = false;
-        if (e.key === 'ArrowDown') this.p2Input.down = false;
-        if (e.key === 'ArrowLeft') this.p2Input.left = false;
-        if (e.key === 'Enter' || e.key === '0') this.p2Input.fire = false;
+        if (e.key === 'ArrowUp') this.keysP2.up = false;
+        if (e.key === 'ArrowRight') this.keysP2.right = false;
+        if (e.key === 'ArrowDown') this.keysP2.down = false;
+        if (e.key === 'ArrowLeft') this.keysP2.left = false;
+        if (e.key === 'Enter' || e.key === '0') this.keysP2.fire = false;
       }
+      this.syncInputs();
     });
+
+    // Reset keys when browser window/tab loses focus to prevent ghost inputs
+    window.addEventListener('blur', () => {
+      this.keysP1 = { up: false, right: false, down: false, left: false, fire: false };
+      this.keysP2 = { up: false, right: false, down: false, left: false, fire: false };
+      this.syncInputs();
+    });
+  }
+
+  syncInputs() {
+    const gp1 = window.gamepadManager ? window.gamepadManager.getP1Input() : null;
+    const gp2 = window.gamepadManager ? window.gamepadManager.getP2Input() : null;
+
+    this.p1Input.up = Boolean(this.keysP1.up || (gp1 && gp1.up));
+    this.p1Input.down = Boolean(this.keysP1.down || (gp1 && gp1.down));
+    this.p1Input.left = Boolean(this.keysP1.left || (gp1 && gp1.left));
+    this.p1Input.right = Boolean(this.keysP1.right || (gp1 && gp1.right));
+    this.p1Input.fire = Boolean(this.keysP1.fire || (gp1 && gp1.fire));
+
+    this.p2Input.up = Boolean(this.keysP2.up || (gp2 && gp2.up));
+    this.p2Input.down = Boolean(this.keysP2.down || (gp2 && gp2.down));
+    this.p2Input.left = Boolean(this.keysP2.left || (gp2 && gp2.left));
+    this.p2Input.right = Boolean(this.keysP2.right || (gp2 && gp2.right));
+    this.p2Input.fire = Boolean(this.keysP2.fire || (gp2 && gp2.fire));
   }
 
   _selectTitleMenuOption() {
@@ -328,6 +356,7 @@ class Game {
     if (window.gamepadManager) {
       window.gamepadManager.update(dt, this);
     }
+    this.syncInputs();
 
     // State Updates
     switch (this.state) {

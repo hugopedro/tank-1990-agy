@@ -18,6 +18,15 @@ class GamepadManager {
     this.toastText = '';
     this.toastTimer = 0;
 
+    // Independent input state for player 1 and player 2 controllers
+    this.padInputs = [
+      { up: false, right: false, down: false, left: false, fire: false },
+      { up: false, right: false, down: false, left: false, fire: false }
+    ];
+
+    // Reference to assigned gamepads for rumble and mapping
+    this.assignedGamepads = [null, null];
+
     const onConnect = (pad) => {
       if (!pad) return;
       this.previouslyConnected.add(pad.index);
@@ -40,34 +49,63 @@ class GamepadManager {
     });
   }
 
+  getP1Input() {
+    return this.padInputs[0];
+  }
+
+  getP2Input() {
+    return this.padInputs[1];
+  }
+
   update(dt, game) {
     if (this.toastTimer > 0) {
       this.toastTimer = Math.max(0, this.toastTimer - dt);
     }
 
+    // Reset pad inputs each frame to avoid sticky inputs
+    this.padInputs[0] = { up: false, right: false, down: false, left: false, fire: false };
+    this.padInputs[1] = { up: false, right: false, down: false, left: false, fire: false };
+    this.assignedGamepads = [null, null];
+
     if (!navigator.getGamepads) return;
-    const gamepads = navigator.getGamepads();
-    if (!gamepads) return;
+    const rawGamepads = navigator.getGamepads();
+    if (!rawGamepads) return;
 
     // Check newly connected/disconnected gamepads during poll
-    for (let idx = 0; idx < Math.min(2, gamepads.length); idx++) {
-      const gp = gamepads[idx];
-      if (gp && gp.connected && !this.previouslyConnected.has(idx)) {
-        this.previouslyConnected.add(idx);
+    for (let i = 0; i < rawGamepads.length; i++) {
+      const gp = rawGamepads[i];
+      if (gp && gp.connected && !this.previouslyConnected.has(gp.index)) {
+        this.previouslyConnected.add(gp.index);
         const cleanName = (gp.id || 'Controle').replace(/\(.*\)/g, '').trim() || 'Controle USB/Bluetooth';
-        this.toastText = `🎮 CONTROLE ${idx + 1} CONECTADO: ${cleanName}`;
+        this.toastText = `🎮 CONTROLE ${gp.index + 1} CONECTADO: ${cleanName}`;
         this.toastTimer = 3.5;
         if (window.soundSystem) window.soundSystem.playScoreDing();
-      } else if ((!gp || !gp.connected) && this.previouslyConnected.has(idx)) {
-        this.previouslyConnected.delete(idx);
-        this.toastText = `⚠️ CONTROLE ${idx + 1} DESCONECTADO`;
+      } else if ((!gp || !gp.connected) && this.previouslyConnected.has(i)) {
+        this.previouslyConnected.delete(i);
+        this.toastText = `⚠️ CONTROLE ${i + 1} DESCONECTADO`;
         this.toastTimer = 3.0;
       }
     }
 
-    for (let idx = 0; idx < Math.min(2, gamepads.length); idx++) {
-      const gp = gamepads[idx];
-      if (!gp || !gp.connected) continue;
+    // Filter connected controllers
+    const connectedPads = Array.from(rawGamepads).filter(gp => gp && gp.connected);
+    if (connectedPads.length === 0) return;
+
+    // Controller mapping:
+    // In Single-Player: first active controller controls Player 1.
+    // In Two-Player: first controls Player 1, second controls Player 2.
+    const playerPads = [];
+    if (!game.isTwoPlayer) {
+      playerPads.push({ playerIdx: 0, gp: connectedPads[0] });
+    } else {
+      playerPads.push({ playerIdx: 0, gp: connectedPads[0] });
+      if (connectedPads.length > 1) {
+        playerPads.push({ playerIdx: 1, gp: connectedPads[1] });
+      }
+    }
+
+    for (const { playerIdx, gp } of playerPads) {
+      this.assignedGamepads[playerIdx] = gp;
 
       const btn = (bIdx) => {
         if (!gp.buttons || !gp.buttons[bIdx]) return false;
@@ -84,21 +122,48 @@ class GamepadManager {
       const ax = (gp.axes && gp.axes[0] !== undefined) ? gp.axes[0] : 0;
       const ay = (gp.axes && gp.axes[1] !== undefined) ? gp.axes[1] : 0;
 
-      const stickUp = ay < -this.deadzone;
-      const stickDown = ay > this.deadzone;
-      const stickLeft = ax < -this.deadzone;
-      const stickRight = ax > this.deadzone;
+      // Dominant-Axis Resolution for Analog Stick to prevent diagonal fighting / UP bias
+      let stickUp = false;
+      let stickDown = false;
+      let stickLeft = false;
+      let stickRight = false;
+      const stickMagnitude = Math.hypot(ax, ay);
 
-      const up = dpadUp || stickUp;
-      const down = dpadDown || stickDown;
-      const left = dpadLeft || stickLeft;
-      const right = dpadRight || stickRight;
+      if (stickMagnitude > this.deadzone) {
+        if (Math.abs(ax) > Math.abs(ay)) {
+          // Horizontal dominant
+          if (ax > 0) stickRight = true;
+          else stickLeft = true;
+        } else {
+          // Vertical dominant
+          if (ay > 0) stickDown = true;
+          else stickUp = true;
+        }
+      }
 
-      // Fire: A (0), B (1), X (2), Y (3), RB (5), RT (7)
+      let up = dpadUp || stickUp;
+      let down = dpadDown || stickDown;
+      let left = dpadLeft || stickLeft;
+      let right = dpadRight || stickRight;
+
+      // Cancel out impossible opposing directions
+      if (up && down) { up = false; down = false; }
+      if (left && right) { left = false; right = false; }
+
+      // Fire: A (0), B (1), X (2), RB (5), RT (7)
       const fire = btn(0) || btn(1) || btn(2) || btn(5) || btn(7);
 
+      // Store in padInputs for this frame
+      this.padInputs[playerIdx] = {
+        up: up,
+        down: down,
+        left: left,
+        right: right,
+        fire: fire
+      };
+
       // Edge triggers (just pressed)
-      const prev = this.prevButtons[idx];
+      const prev = this.prevButtons[playerIdx] || {};
       const startJustPressed = btn(9) && !prev[9];
       const backJustPressed = btn(8) && !prev[8];
       const yJustPressed = btn(3) && !prev[3];
@@ -118,11 +183,9 @@ class GamepadManager {
         } else if (backJustPressed || btn(1)) {
           window.multiplayerManager.closeLobby();
         }
-        return;
       }
-
       // Title Screen Navigation
-      if (game.state === 'TITLE') {
+      else if (game.state === 'TITLE') {
         if (upJustPressed) {
           window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 3) % 4;
           window.soundSystem.playShot();
@@ -147,30 +210,18 @@ class GamepadManager {
           game.toggleGraphicsMode();
           window.soundSystem.playScoreDing();
         }
-        if (backJustPressed && game.state === 'PLAYING') {
+        if (backJustPressed && (game.state === 'PLAYING' || game.state === 'PAUSED')) {
           game.state = 'TITLE';
           window.soundSystem.playPause();
         }
-
-        // Apply joystick inputs to player
-        if (idx === 0) {
-          if (up) game.p1Input.up = true;
-          if (down) game.p1Input.down = true;
-          if (left) game.p1Input.left = true;
-          if (right) game.p1Input.right = true;
-          if (fire) game.p1Input.fire = true;
-        } else if (idx === 1) {
-          // Controller 2 controls Player 2
-          if (up) game.p2Input.up = true;
-          if (down) game.p2Input.down = true;
-          if (left) game.p2Input.left = true;
-          if (right) game.p2Input.right = true;
-          if (fire) game.p2Input.fire = true;
+        if (game.state === 'GAME_OVER' && (startJustPressed || aJustPressed)) {
+          game.state = 'TITLE';
+          window.soundSystem.playPause();
         }
       }
 
-      // Record states for next frame's edge-detection
-      this.prevButtons[idx] = {
+      // Record states for next frame's edge-detection (always updated)
+      this.prevButtons[playerIdx] = {
         9: btn(9),
         8: btn(8),
         3: btn(3),
@@ -184,10 +235,7 @@ class GamepadManager {
 
   rumble(playerIndex = 0, weakMagnitude = 0.4, strongMagnitude = 0.2, durationMs = 120) {
     if (!navigator.getGamepads) return;
-    const gamepads = navigator.getGamepads();
-    if (!gamepads) return;
-
-    const gp = gamepads[playerIndex];
+    const gp = this.assignedGamepads[playerIndex] || (navigator.getGamepads() && navigator.getGamepads()[playerIndex]);
     if (gp && gp.vibrationActuator && typeof gp.vibrationActuator.playEffect === 'function') {
       try {
         gp.vibrationActuator.playEffect('dual-rumble', {
