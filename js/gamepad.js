@@ -46,7 +46,22 @@ class GamepadManager {
       this.previouslyConnected.delete(idx);
       this.toastText = `⚠️ CONTROLE ${idx + 1} DESCONECTADO`;
       this.toastTimer = 3.0;
+      this.stopRumble();
     });
+
+    // Safety guards: stop motor vibration if page is minimized, blurred, or closed
+    window.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.stopRumble();
+    });
+    window.addEventListener('beforeunload', () => {
+      this.stopRumble();
+    });
+    window.addEventListener('blur', () => {
+      this.stopRumble();
+    });
+
+    // Initial stop to silence any latched motors from previous sessions
+    setTimeout(() => this.stopRumble(), 100);
   }
 
   getP1Input() {
@@ -233,6 +248,30 @@ class GamepadManager {
     }
   }
 
+  stopRumble() {
+    if (!navigator.getGamepads) return;
+    const gamepads = navigator.getGamepads();
+    if (!gamepads) return;
+    for (let i = 0; i < gamepads.length; i++) {
+      const gp = gamepads[i];
+      if (gp && gp.vibrationActuator) {
+        try {
+          if (typeof gp.vibrationActuator.reset === 'function') {
+            gp.vibrationActuator.reset().catch(() => {});
+          }
+          if (typeof gp.vibrationActuator.playEffect === 'function') {
+            gp.vibrationActuator.playEffect('dual-rumble', {
+              startDelay: 0,
+              duration: 10,
+              weakMagnitude: 0,
+              strongMagnitude: 0
+            }).catch(() => {});
+          }
+        } catch (err) {}
+      }
+    }
+  }
+
   rumble(playerIndex = 0, weakMagnitude = 0.4, strongMagnitude = 0.2, durationMs = 120) {
     if (!navigator.getGamepads) return;
     const gp = this.assignedGamepads[playerIndex] || (navigator.getGamepads() && navigator.getGamepads()[playerIndex]);
@@ -240,7 +279,7 @@ class GamepadManager {
       try {
         gp.vibrationActuator.playEffect('dual-rumble', {
           startDelay: 0,
-          duration: durationMs,
+          duration: Math.min(600, Math.max(10, durationMs)),
           weakMagnitude: Math.min(1.0, weakMagnitude),
           strongMagnitude: Math.min(1.0, strongMagnitude)
         }).catch(() => {});
