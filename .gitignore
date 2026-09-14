@@ -1,0 +1,14 @@
+# OS and Editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+*~
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local scratch and logs
+scratch/
+*.log

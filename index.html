@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TANK 1990 - NES HTML5 Edition</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    window.__PAGE_ERRORS = [];
+    window.addEventListener('error', function(e) {
+      window.__PAGE_ERRORS.push({
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        stack: e.error ? e.error.stack : null
+      });
+      console.error('Captured Error:', e.message, e.filename, e.lineno);
+    });
+  </script>
+</head>
+<body>
+
+  <div class="cabinet-wrapper">
+    <div class="screen-frame" id="screenFrame">
+      <canvas id="gameCanvas" width="1024" height="896"></canvas>
+    </div>
+
+    <!-- Virtual On-screen D-Pad & Fire for Touch / Mobile -->
+    <div class="touch-controls" id="touchControls">
+      <div class="dpad">
+        <button class="dpad-btn dpad-up" id="btnUp">▲</button>
+        <button class="dpad-btn dpad-left" id="btnLeft">◀</button>
+        <div class="dpad-btn dpad-center"></div>
+        <button class="dpad-btn dpad-right" id="btnRight">▶</button>
+        <button class="dpad-btn dpad-down" id="btnDown">▼</button>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn-action" id="btnActionFire">TIRO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/bullet.js"></script>
+  <script src="js/powerup.js"></script>
+  <script src="js/tank.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/gamepad.js"></script>
+  <script src="js/peerjs.min.js"></script>
+  <script src="js/multiplayer.js"></script>
+  <script src="js/game.js"></script>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('gameCanvas');
+      const game = new Game(canvas);
+      window.game = game;
+      if (window.multiplayerManager) {
+        window.multiplayerManager.init(game);
+      }
+      game.start();
+
+      // Auto enable touch on mobile devices
+      const touchControls = document.getElementById('touchControls');
+      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        if (touchControls) touchControls.style.display = 'flex';
+      }
+
+      // Touch / Virtual D-Pad bindings
+      const bindTouch = (elemId, inputProp) => {
+        const elem = document.getElementById(elemId);
+        if (!elem) return;
+
+        const press = (e) => {
+          e.preventDefault();
+          window.soundSystem.resume();
+          game.p1Input[inputProp] = true;
+        };
+
+        const release = (e) => {
+          e.preventDefault();
+          game.p1Input[inputProp] = false;
+        };
+
+        elem.addEventListener('touchstart', press, { passive: false });
+        elem.addEventListener('touchend', release, { passive: false });
+        elem.addEventListener('mousedown', press);
+        elem.addEventListener('mouseup', release);
+        elem.addEventListener('mouseleave', release);
+      };
+
+      bindTouch('btnUp', 'up');
+      bindTouch('btnDown', 'down');
+      bindTouch('btnLeft', 'left');
+      bindTouch('btnRight', 'right');
+      bindTouch('btnActionFire', 'fire');
+
+      // URL hash or parameters support (e.g. #play or ?stage=1)
+      if (window.location.hash.includes('play')) {
+        game.startStage(1, true);
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const stageParam = urlParams.get('stage');
+      const skipIntermission = urlParams.get('skip') === '1' || urlParams.get('play') === '1';
+      if (stageParam) {
+        const s = parseInt(stageParam, 10);
+        if (!isNaN(s) && s >= 1 && s <= 5) {
+          game.startStage(s, skipIntermission);
+          btnStage.textContent = `🚩 FASE: ${s}`;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
