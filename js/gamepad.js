@@ -201,6 +201,7 @@ class GamepadManager {
       }
       // Title Screen Navigation
       else if (game.state === 'TITLE') {
+        if (window.uiManager) window.uiManager.skipTitleIntro();
         if (upJustPressed) {
           window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 3) % 4;
           window.soundSystem.playShot();
@@ -227,10 +228,12 @@ class GamepadManager {
         }
         if (backJustPressed && (game.state === 'PLAYING' || game.state === 'PAUSED')) {
           game.state = 'TITLE';
+          if (window.uiManager) window.uiManager.resetTitleIntro();
           window.soundSystem.playPause();
         }
         if (game.state === 'GAME_OVER' && (startJustPressed || aJustPressed)) {
           game.state = 'TITLE';
+          if (window.uiManager) window.uiManager.resetTitleIntro();
           window.soundSystem.playPause();
         }
       }

@@ -113,6 +113,7 @@ class Game {
 
       if (e.key === 'r' || e.key === 'R') {
         this.state = GAME_STATES.TITLE;
+        if (window.uiManager) window.uiManager.resetTitleIntro();
         window.soundSystem.playPause();
         return;
       }
@@ -159,6 +160,7 @@ class Game {
       }
 
       if (this.state === GAME_STATES.TITLE) {
+        if (window.uiManager) window.uiManager.skipTitleIntro();
         if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
           window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 3) % 4;
           window.soundSystem.playShot();
@@ -416,7 +418,9 @@ class Game {
   }
 
   _updateTitle(dt) {
-    // handled by input
+    if (window.uiManager) {
+      window.uiManager.updateTitle(dt);
+    }
   }
 
   _renderTitle() {
@@ -750,6 +754,7 @@ class Game {
     window.soundSystem.playGameOver(() => {
       setTimeout(() => {
         this.state = GAME_STATES.TITLE;
+        if (window.uiManager) window.uiManager.resetTitleIntro();
       }, 2500);
     });
   }
