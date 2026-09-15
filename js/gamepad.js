@@ -107,17 +107,17 @@ class GamepadManager {
     if (connectedPads.length === 0) return;
 
     // Controller mapping:
-    // In Single-Player: first active controller controls Player 1.
-    // In Two-Player: first controls Player 1, second controls Player 2.
+    // In Multiplayer Client: local player is Player 2 (green tank).
+    // In Single-Player: local controller controls Player 1 (yellow tank).
+    const isMultiClient = Boolean(window.multiplayerManager && window.multiplayerManager.mode === 'CLIENT');
     const playerPads = [];
-    if (!game.isTwoPlayer) {
+    if (isMultiClient) {
       playerPads.push({ playerIdx: 0, gp: connectedPads[0] });
+      playerPads.push({ playerIdx: 1, gp: connectedPads[connectedPads.length > 1 ? 1 : 0] });
     } else {
       playerPads.push({ playerIdx: 0, gp: connectedPads[0] });
-      if (connectedPads.length > 1) {
-        playerPads.push({ playerIdx: 1, gp: connectedPads[1] });
-      }
     }
+
 
     for (const { playerIdx, gp } of playerPads) {
       this.assignedGamepads[playerIdx] = gp;
@@ -203,28 +203,18 @@ class GamepadManager {
       else if (game.state === 'TITLE') {
         if (window.uiManager) window.uiManager.skipTitleIntro();
         if (upJustPressed) {
-          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 3) % 4;
+          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 2) % 3;
           window.soundSystem.playShot();
         } else if (downJustPressed) {
-          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 1) % 4;
+          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 1) % 3;
           window.soundSystem.playShot();
         } else if (aJustPressed) {
           game._selectTitleMenuOption();
-        } else if (backJustPressed) {
-          game.isTwoPlayer = !game.isTwoPlayer;
-          window.soundSystem.playScoreDing();
-        } else if (yJustPressed || lbJustPressed) {
-          game.toggleGraphicsMode();
-          window.soundSystem.playScoreDing();
         }
       } else {
         // In-game Pause & Controls
         if (startJustPressed) {
           game.togglePause();
-        }
-        if (yJustPressed || lbJustPressed) {
-          game.toggleGraphicsMode();
-          window.soundSystem.playScoreDing();
         }
         if (backJustPressed && (game.state === 'PLAYING' || game.state === 'PAUSED')) {
           game.state = 'TITLE';

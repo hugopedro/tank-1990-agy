@@ -105,12 +105,6 @@ class Game {
       window.soundSystem.resume();
 
       // Global Quick Shortcuts
-      if (e.key === 'g' || e.key === 'G') {
-        this.toggleGraphicsMode();
-        window.soundSystem.playScoreDing();
-        return;
-      }
-
       if (e.key === 'r' || e.key === 'R') {
         this.state = GAME_STATES.TITLE;
         if (window.uiManager) window.uiManager.resetTitleIntro();
@@ -124,18 +118,6 @@ class Game {
         } else {
           document.exitFullscreen().catch(() => {});
         }
-        return;
-      }
-
-      if (e.key === '1') {
-        this.isTwoPlayer = false;
-        window.soundSystem.playScoreDing();
-        return;
-      }
-
-      if (e.key === '2') {
-        this.isTwoPlayer = true;
-        window.soundSystem.playScoreDing();
         return;
       }
 
@@ -162,10 +144,10 @@ class Game {
       if (this.state === GAME_STATES.TITLE) {
         if (window.uiManager) window.uiManager.skipTitleIntro();
         if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 3) % 4;
+          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 2) % 3;
           window.soundSystem.playShot();
         } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 1) % 4;
+          window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 1) % 3;
           window.soundSystem.playShot();
         } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'j' || e.key === 'J') {
           this._selectTitleMenuOption();
@@ -186,21 +168,13 @@ class Game {
         return;
       }
 
-      // Player 1: WASD + Space / J (or Arrows if single player)
-      if (e.key === 'w' || e.key === 'W' || (!this.isTwoPlayer && e.key === 'ArrowUp')) this.keysP1.up = true;
-      if (e.key === 'd' || e.key === 'D' || (!this.isTwoPlayer && e.key === 'ArrowRight')) this.keysP1.right = true;
-      if (e.key === 's' || e.key === 'S' || (!this.isTwoPlayer && e.key === 'ArrowDown')) this.keysP1.down = true;
-      if (e.key === 'a' || e.key === 'A' || (!this.isTwoPlayer && e.key === 'ArrowLeft')) this.keysP1.left = true;
-      if (e.key === ' ' || e.key === 'j' || e.key === 'J') this.keysP1.fire = true;
+      // Player Controls (WASD or Arrow Keys + Space/Enter/J)
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') this.keysP1.up = true;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') this.keysP1.right = true;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') this.keysP1.down = true;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.keysP1.left = true;
+      if (e.code === 'Space' || e.code === 'Enter' || e.code === 'Numpad0' || e.code === 'KeyJ') this.keysP1.fire = true;
 
-      // Player 2: Arrow Keys + Enter / Numpad 0
-      if (this.isTwoPlayer) {
-        if (e.key === 'ArrowUp') this.keysP2.up = true;
-        if (e.key === 'ArrowRight') this.keysP2.right = true;
-        if (e.key === 'ArrowDown') this.keysP2.down = true;
-        if (e.key === 'ArrowLeft') this.keysP2.left = true;
-        if (e.key === 'Enter' || e.key === '0') this.keysP2.fire = true;
-      }
       this.syncInputs();
     });
 
@@ -209,21 +183,13 @@ class Game {
         e.preventDefault();
       }
 
-      // Player 1
-      if (e.key === 'w' || e.key === 'W' || (!this.isTwoPlayer && e.key === 'ArrowUp')) this.keysP1.up = false;
-      if (e.key === 'd' || e.key === 'D' || (!this.isTwoPlayer && e.key === 'ArrowRight')) this.keysP1.right = false;
-      if (e.key === 's' || e.key === 'S' || (!this.isTwoPlayer && e.key === 'ArrowDown')) this.keysP1.down = false;
-      if (e.key === 'a' || e.key === 'A' || (!this.isTwoPlayer && e.key === 'ArrowLeft')) this.keysP1.left = false;
-      if (e.key === ' ' || e.key === 'j' || e.key === 'J') this.keysP1.fire = false;
+      // Player Controls (WASD or Arrow Keys + Space/Enter/J)
+      if (e.code === 'KeyW' || e.code === 'ArrowUp') this.keysP1.up = false;
+      if (e.code === 'KeyD' || e.code === 'ArrowRight') this.keysP1.right = false;
+      if (e.code === 'KeyS' || e.code === 'ArrowDown') this.keysP1.down = false;
+      if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.keysP1.left = false;
+      if (e.code === 'Space' || e.code === 'Enter' || e.code === 'Numpad0' || e.code === 'KeyJ') this.keysP1.fire = false;
 
-      // Player 2
-      if (this.isTwoPlayer) {
-        if (e.key === 'ArrowUp') this.keysP2.up = false;
-        if (e.key === 'ArrowRight') this.keysP2.right = false;
-        if (e.key === 'ArrowDown') this.keysP2.down = false;
-        if (e.key === 'ArrowLeft') this.keysP2.left = false;
-        if (e.key === 'Enter' || e.key === '0') this.keysP2.fire = false;
-      }
       this.syncInputs();
     });
 
@@ -236,8 +202,34 @@ class Game {
   }
 
   syncInputs() {
+    const isMultiHost = Boolean(window.multiplayerManager && window.multiplayerManager.mode === 'HOST' && window.multiplayerManager.isConnected);
+    const isMultiClient = Boolean(window.multiplayerManager && window.multiplayerManager.mode === 'CLIENT');
+
     const gp1 = window.gamepadManager ? window.gamepadManager.getP1Input() : null;
     const gp2 = window.gamepadManager ? window.gamepadManager.getP2Input() : null;
+
+    if (isMultiClient) {
+      // In online multiplayer, the local client machine drives Player 2 (green tank).
+      // Aggregate any local keyboard (WASD or Arrows) and any connected gamepad (slot 0 or 1).
+      const clientUp = Boolean(this.keysP1.up || this.keysP2.up || (gp1 && gp1.up) || (gp2 && gp2.up));
+      const clientDown = Boolean(this.keysP1.down || this.keysP2.down || (gp1 && gp1.down) || (gp2 && gp2.down));
+      const clientLeft = Boolean(this.keysP1.left || this.keysP2.left || (gp1 && gp1.left) || (gp2 && gp2.left));
+      const clientRight = Boolean(this.keysP1.right || this.keysP2.right || (gp1 && gp1.right) || (gp2 && gp2.right));
+      const clientFire = Boolean(this.keysP1.fire || this.keysP2.fire || (gp1 && gp1.fire) || (gp2 && gp2.fire));
+
+      this.p1Input.up = clientUp;
+      this.p1Input.down = clientDown;
+      this.p1Input.left = clientLeft;
+      this.p1Input.right = clientRight;
+      this.p1Input.fire = clientFire;
+
+      this.p2Input.up = clientUp;
+      this.p2Input.down = clientDown;
+      this.p2Input.left = clientLeft;
+      this.p2Input.right = clientRight;
+      this.p2Input.fire = clientFire;
+      return;
+    }
 
     this.p1Input.up = Boolean(this.keysP1.up || (gp1 && gp1.up));
     this.p1Input.down = Boolean(this.keysP1.down || (gp1 && gp1.down));
@@ -245,28 +237,30 @@ class Game {
     this.p1Input.right = Boolean(this.keysP1.right || (gp1 && gp1.right));
     this.p1Input.fire = Boolean(this.keysP1.fire || (gp1 && gp1.fire));
 
-    this.p2Input.up = Boolean(this.keysP2.up || (gp2 && gp2.up));
-    this.p2Input.down = Boolean(this.keysP2.down || (gp2 && gp2.down));
-    this.p2Input.left = Boolean(this.keysP2.left || (gp2 && gp2.left));
-    this.p2Input.right = Boolean(this.keysP2.right || (gp2 && gp2.right));
-    this.p2Input.fire = Boolean(this.keysP2.fire || (gp2 && gp2.fire));
+    // When hosting an online match, Player 2 inputs arrive over WebRTC from the client.
+    // Do not wipe p2Input with local host inputs!
+    if (!isMultiHost) {
+      this.p2Input.up = Boolean(this.keysP2.up || (gp2 && gp2.up));
+      this.p2Input.down = Boolean(this.keysP2.down || (gp2 && gp2.down));
+      this.p2Input.left = Boolean(this.keysP2.left || (gp2 && gp2.left));
+      this.p2Input.right = Boolean(this.keysP2.right || (gp2 && gp2.right));
+      this.p2Input.fire = Boolean(this.keysP2.fire || (gp2 && gp2.fire));
+    }
   }
 
   _selectTitleMenuOption() {
     const opt = window.uiManager.titleMenuIndex;
     if (opt === 0) {
+      // 1 Jogador
       this.isTwoPlayer = false;
       this.startStage(1);
     } else if (opt === 1) {
-      this.isTwoPlayer = true;
-      this.startStage(1);
-    } else if (opt === 2) {
       // Multiplayer Online
       if (window.multiplayerManager) {
         window.multiplayerManager.openLobby();
       }
-    } else if (opt === 3) {
-      // Stage select
+    } else if (opt === 2) {
+      // Selecionar Fase
       this.currentStage = (this.currentStage % 5) + 1;
       window.soundSystem.playScoreDing();
     }
@@ -540,8 +534,11 @@ class Game {
     const p2 = this.players[1];
     let isMoving = false;
     if (p2 && p2.active && window.mapManager) {
-      // Local keyboard / gamepad inputs (stored in p1Input) drive Player 2 locally
-      p2.update(dt, window.mapManager, [...this.players, ...this.enemies], this.p1Input);
+      // Local keyboard / gamepad inputs drive Player 2 locally
+      const localInput = (this.p2Input && (this.p2Input.up || this.p2Input.down || this.p2Input.left || this.p2Input.right || this.p2Input.fire))
+        ? this.p2Input
+        : this.p1Input;
+      p2.update(dt, window.mapManager, [...this.players, ...this.enemies], localInput);
       isMoving = p2.isMoving;
     }
 
@@ -799,12 +796,12 @@ class Game {
   }
 
   toggleGraphicsMode() {
-    this.graphicsMode = (this.graphicsMode === 'modern') ? 'classic' : 'modern';
+    this.graphicsMode = 'modern';
     return this.graphicsMode;
   }
 
   addExplosion(x, y, isBig = false) {
-    if (isBig && this.graphicsMode === 'modern') {
+    if (isBig) {
       this.screenShake = 0.35;
     }
     this.explosions.push({
@@ -922,7 +919,7 @@ class Game {
       this.playerScores[0],
       this.playerKills[0],
       null,
-      this.graphicsMode === 'modern',
+      true,
       this.scale
     );
   }
@@ -934,7 +931,7 @@ class Game {
   }
 
   _renderGameOver() {
-    window.uiManager.drawGameOver(this.ctx, this.gameOverY, this.graphicsMode === 'modern', this.scale);
+    window.uiManager.drawGameOver(this.ctx, this.gameOverY, true, this.scale);
   }
 
   _renderPauseOverlay() {
@@ -949,45 +946,35 @@ class Game {
   }
 
   _renderGame() {
-    const isModern = (this.graphicsMode === 'modern');
-    this.ctx.imageSmoothingEnabled = isModern;
+    const isModern = true;
+    this.ctx.imageSmoothingEnabled = true;
 
-    // 1. Clear background
-    if (isModern) {
-      // Modern High-Tech Cabinet Bezel
-      const bgGrad = this.ctx.createLinearGradient(0, 0, 1024, 896);
-      bgGrad.addColorStop(0, '#151722');
-      bgGrad.addColorStop(1, '#0e1018');
-      this.ctx.fillStyle = bgGrad;
-      this.ctx.fillRect(0, 0, 1024, 896);
+    // 1. Clear background (Modern High-Tech Cabinet Bezel)
+    const bgGrad = this.ctx.createLinearGradient(0, 0, 1024, 896);
+    bgGrad.addColorStop(0, '#151722');
+    bgGrad.addColorStop(1, '#0e1018');
+    this.ctx.fillStyle = bgGrad;
+    this.ctx.fillRect(0, 0, 1024, 896);
 
-      // Playfield Bezel Frame
-      this.ctx.fillStyle = '#222533';
-      this.ctx.fillRect(60, 28, 840, 840);
+    // Playfield Bezel Frame
+    this.ctx.fillStyle = '#222533';
+    this.ctx.fillRect(60, 28, 840, 840);
 
-      // Playfield arena floor
-      const floorGrad = this.ctx.createLinearGradient(64, 32, 64, 864);
-      floorGrad.addColorStop(0, '#1a1d26');
-      floorGrad.addColorStop(1, '#12141a');
-      this.ctx.fillStyle = floorGrad;
-      this.ctx.fillRect(64, 32, 832, 832);
+    // Playfield arena floor
+    const floorGrad = this.ctx.createLinearGradient(64, 32, 64, 864);
+    floorGrad.addColorStop(0, '#1a1d26');
+    floorGrad.addColorStop(1, '#12141a');
+    this.ctx.fillStyle = floorGrad;
+    this.ctx.fillRect(64, 32, 832, 832);
 
-      // Subtle arena grid lines
-      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
-      this.ctx.lineWidth = 1;
-      for (let g = 64; g <= 896; g += 64) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(g, 32); this.ctx.lineTo(g, 864);
-        this.ctx.moveTo(64, g - 32); this.ctx.lineTo(896, g - 32);
-        this.ctx.stroke();
-      }
-    } else {
-      // Classic NES Grey Border & Black Playfield
-      this.ctx.fillStyle = PALETTE.greyBorder;
-      this.ctx.fillRect(0, 0, 1024, 896);
-
-      this.ctx.fillStyle = PALETTE.black;
-      this.ctx.fillRect(64, 32, 832, 832);
+    // Subtle arena grid lines
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+    this.ctx.lineWidth = 1;
+    for (let g = 64; g <= 896; g += 64) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(g, 32); this.ctx.lineTo(g, 864);
+      this.ctx.moveTo(64, g - 32); this.ctx.lineTo(896, g - 32);
+      this.ctx.stroke();
     }
 
     // Apply Screen Shake if active

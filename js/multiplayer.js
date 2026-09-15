@@ -217,6 +217,9 @@ class MultiplayerManager {
     conn.on('close', () => {
       this.isConnected = false;
       this.mode = 'OFFLINE';
+      if (this.game) {
+        this.game.p2Input = { up: false, right: false, down: false, left: false, fire: false };
+      }
       if (window.gamepadManager) {
         window.gamepadManager.toastText = '⚠️ CONEXÃO P2P ENCERRADA';
         window.gamepadManager.toastTimer = 4.0;
@@ -394,9 +397,12 @@ class MultiplayerManager {
 
     // CLIENT: Stream local inputs to Host (60Hz)
     if (this.mode === 'CLIENT') {
+      const clientInput = (this.game.p2Input && (this.game.p2Input.up || this.game.p2Input.down || this.game.p2Input.left || this.game.p2Input.right || this.game.p2Input.fire))
+        ? this.game.p2Input
+        : this.game.p1Input;
       this.conn.send({
         type: 'INPUT',
-        input: this.game.p1Input
+        input: clientInput
       });
     }
   }

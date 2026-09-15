@@ -86,8 +86,7 @@ Sem arquivos de áudio pesados! O sistema sintetiza fielmente em tempo real os 4
 - **Árvores e Folhagens Vivas:** Copas arredondadas e volumosas com balanço idle orgânico (swaying) e folhas que flutuam ao vento.
 - **Água Tropical Animada:** Gradiente turquesa com ondas ondulatórias e cáusticas em tempo real.
 - **Base da Águia Dourada:** Pedestal de pedra nobre com brasão dourado e halo pulsante em gradiente radial.
-- **Sistema de Partículas & Camera Shake:** Faíscas metálicas ao acertar aço, poeira de esteira na terra, anéis de fumaça e clarão ao disparar, e tremor de tela nas grandes explosões.
-- **Alternância Instantânea:** Botão `✨ ESTILO: MODERNO 2D` / `🕹️ ESTILO: CLÁSSICO NES` para alternar entre os dois estilos em tempo real durante a partida.
+- **Visual Permanente de Alta Definição:** Interface, cenários e efeitos 100% integrados no estilo moderno vibrante.
 
 ---
 

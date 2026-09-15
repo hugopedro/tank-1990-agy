@@ -35,20 +35,17 @@ O jogo possui suporte nativo à **HTML5 Gamepad API**, reconhecendo automaticame
 | **Botão `A` ou `X`** | Disparar canhão / Confirmar seleção |
 | **Gatilhos `RT` ou `RB`** | Disparo rápido ergonômico |
 | **Botão `Start`** | Iniciar partida / Pausar e despausar |
-| **Botão `Back` / `Select`** | Alternar entre modo 1P e 2P / Reiniciar |
-| **Botão `Y` ou `LB`** | Alternar em tempo real o estilo visual (`✨ MODERNO 2D` ↔ `🕹️ CLÁSSICO NES`) |
+| **Botão `Back` / `Select`** | Reiniciar / Voltar à tela inicial |
 
-### 👥 2 Jogadores com 2 Controles Independentes
-- Conecte 2 controles ao PC:
-  - **Controle 1:** Pilota o **Jogador 1** (Tanque Amarelo/Dourado).
-  - **Controle 2:** Pilota o **Jogador 2** (Tanque Verde).
-- Uma notificação translúcida em neon surge no topo da tela confirmando a detecção de cada controle conectado (`🎮 CONTROLE 1 CONECTADO`).
+### 👥 Modos de Jogo (1 Player Solo e Multiplayer Online)
+- **1 Jogador (Solo):** Controle o Tanque Amarelo/Dourado usando teclado ou joystick.
+- **Multiplayer Online P2P:** Jogue cooperativo em tempo real via WebRTC com código de sala instantâneo (Host controla o Tanque 1 e Cliente controla o Tanque 2 verde).
 
 ### 📳 Feedback de Vibração Tátil (Dual-Rumble)
 - **Disparos:** Pulso leve e ágil no motor de vibração.
 - **Tiro no Aço / Ricochete:** Vibração média de impacto.
 - **Explosão de Tanque:** Impacto potente nos motores de baixa e alta frequência.
-- **Destruição da Base (Águia):** Tremor longo e contínuo nos dois controles.
+- **Destruição da Base (Águia):** Tremor longo e contínuo no controle.
 
 ---
 
@@ -58,13 +55,10 @@ Como a tela do jogo agora opera em modo **Arcade Imersivo / Tela Cheia**, todos 
 
 | Tecla | Função |
 | :---: | :--- |
-| **`G`** | **Alternar Estilo Visual:** Troca em tempo real entre `✨ MODERNO 2D` e `🕹️ CLÁSSICO NES 8-BIT`. |
 | **`M`** | **Mutar / Ativar Áudio:** Liga ou desliga o sintetizador Web Audio API. |
 | **`P`** ou **`Enter`** | **Pausar Partida:** Pausa a simulação com letreiro na tela. |
 | **`R`** | **Reiniciar:** Volta para a tela inicial de título (Title Screen). |
 | **`F`** | **Tela Cheia Real:** Entra ou sai do modo Fullscreen nativo do navegador. |
-| **`1`** | Seleciona o modo **1 Jogador**. |
-| **`2`** | Seleciona o modo **2 Jogadores**. |
 | **`N`** | Avança para a **Próxima Fase** (Stage 1 a 5). |
 | **`C`** | Alterna o filtro retrô de **Scanlines CRT** (`ON` / `OFF`). |
 
