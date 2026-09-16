@@ -253,7 +253,7 @@ class Game {
     if (opt === 0) {
       // 1 Jogador
       this.isTwoPlayer = false;
-      this.startStage(1);
+      this.startStage(this.currentStage || 1);
     } else if (opt === 1) {
       // Multiplayer Online
       if (window.multiplayerManager) {
@@ -320,10 +320,12 @@ class Game {
 
     if (skipIntermission) {
       this.state = GAME_STATES.PLAYING;
+      this.curtainHeight = 0;
     } else {
       this.state = GAME_STATES.STAGE_START;
       // Play Stage Start Intro Jingle
       window.soundSystem.playStageStart(() => {
+        this.curtainHeight = 0;
         this.state = GAME_STATES.PLAYING;
       });
     }
@@ -424,13 +426,21 @@ class Game {
 
   _updateStageStart(dt) {
     this.stageTransitionTimer += dt;
-    // Curtains open after 1.6s
+    // Curtains open after 1.4s
     if (this.stageTransitionTimer > 1.4) {
       this.curtainHeight = Math.max(0, this.curtainHeight - dt * 250);
+      if (this.curtainHeight <= 0) {
+        this.curtainHeight = 0;
+        this.state = GAME_STATES.PLAYING;
+      }
     }
   }
 
   _updatePlaying(dt) {
+    if (this.curtainHeight > 0) {
+      this.curtainHeight = Math.max(0, this.curtainHeight - dt * 300);
+    }
+
     // Client mode: simulate local Player 2 prediction & visuals only (Host is authoritative)
     if (window.multiplayerManager && window.multiplayerManager.mode === 'CLIENT') {
       this._updateClientPlaying(dt);

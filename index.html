@@ -123,7 +123,6 @@
         const s = parseInt(stageParam, 10);
         if (!isNaN(s) && s >= 1 && s <= 5) {
           game.startStage(s, skipIntermission);
-          btnStage.textContent = `🚩 FASE: ${s}`;
         }
       }
     });

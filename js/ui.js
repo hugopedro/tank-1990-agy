@@ -333,7 +333,8 @@ class UIManager {
       ctx.restore();
 
       // Menu Options with Glowing Selection
-      const options = ['1 JOGADOR', '🌐 MULTIPLAYER ONLINE', 'SELECIONAR FASE'];
+      const stageNum = (window.game && window.game.currentStage) ? window.game.currentStage : 1;
+      const options = ['1 JOGADOR', '🌐 MULTIPLAYER ONLINE', `SELECIONAR FASE: ${stageNum}`];
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
 
@@ -382,6 +383,7 @@ class UIManager {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
       ctx.fillText('[M] SOM  •  [F] TELA CHEIA  •  [R] REINICIAR', W / 2, 775);
 
+    ctx.restore();
     ctx.restore();
   }
 
