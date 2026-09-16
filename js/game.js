@@ -464,7 +464,20 @@ class Game {
 
       // Handle bullets fired by player
       p.bullets.forEach(b => {
-        if (!this.bullets.includes(b)) this.bullets.push(b);
+        if (!this.bullets.includes(b)) {
+          // Lag compensation for Player 2 shooting on Host (compensates ping / 2)
+          if (p.playerIndex === 1 && window.multiplayerManager && window.multiplayerManager.mode === 'HOST' && !b._lagCompensated) {
+            b._lagCompensated = true;
+            const oneWayDelaySec = Math.max(0, Math.min(0.2, ((window.multiplayerManager.ping || 0) / 2000)));
+            const advanceDist = (b.speed * 60) * oneWayDelaySec;
+            if (b.direction === 0) b.y -= advanceDist;
+            else if (b.direction === 1) b.x += advanceDist;
+            else if (b.direction === 2) b.y += advanceDist;
+            else if (b.direction === 3) b.x -= advanceDist;
+            if (window.mapManager) b._checkMapCollision(window.mapManager);
+          }
+          this.bullets.push(b);
+        }
       });
     });
 
@@ -538,7 +551,7 @@ class Game {
       window.mapManager.update(dt);
     }
 
-    // Client-side prediction for Player 2 (Local player on Client machine)
+    // 1. Client-side prediction for Player 2 (Local player on Client machine)
     const p2 = this.players[1];
     let isMoving = false;
     if (p2 && p2.active && window.mapManager) {
@@ -548,7 +561,89 @@ class Game {
         : this.p1Input;
       p2.update(dt, window.mapManager, [...this.players, ...this.enemies], localInput);
       isMoving = p2.isMoving;
+
+      // Collect locally predicted bullets so player sees immediate firing with 0ms latency
+      p2.bullets.forEach(b => {
+        if (!this.bullets.includes(b)) {
+          b.clientPredicted = true;
+          this.bullets.push(b);
+        }
+      });
+
+      // Smooth exponential decay of visual error offset (zero visual snapping!)
+      if (p2.renderOffsetX || p2.renderOffsetY) {
+        const decay = Math.pow(0.04, dt * 6);
+        p2.renderOffsetX *= decay;
+        p2.renderOffsetY *= decay;
+        if (Math.abs(p2.renderOffsetX) < 0.08) p2.renderOffsetX = 0;
+        if (Math.abs(p2.renderOffsetY) < 0.08) p2.renderOffsetY = 0;
+      }
     }
+
+    // 2. Smooth LERP interpolation for Player 1 (Host authoritative tank)
+    const p1 = this.players[0];
+    if (p1 && window.multiplayerManager && window.multiplayerManager.p1Target) {
+      const target = window.multiplayerManager.p1Target;
+      const dx = target.x - p1.x;
+      const dy = target.y - p1.y;
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq > 48 * 48 || !p1.active) {
+        p1.x = target.x;
+        p1.y = target.y;
+      } else if (distSq > 0.01) {
+        const lerpAmt = Math.min(1.0, dt * 22);
+        p1.x += dx * lerpAmt;
+        p1.y += dy * lerpAmt;
+      }
+
+      p1.direction = target.dir;
+      p1.tier = target.tier;
+      p1.shieldTimer = target.shield;
+      p1.active = target.active;
+
+      if (distSq > 0.05) {
+        p1.animDist += Math.sqrt(distSq) * 0.4;
+        if (p1.animDist > 4) {
+          p1.animDist = 0;
+          p1.animFrame = (p1.animFrame + 1) % 2;
+        }
+      }
+    }
+
+    // 3. Smooth LERP interpolation for Enemies at 60 FPS
+    this.enemies.forEach(e => {
+      if (e.targetX !== undefined && e.targetY !== undefined) {
+        const edx = e.targetX - e.x;
+        const edy = e.targetY - e.y;
+        const edistSq = edx * edx + edy * edy;
+
+        if (edistSq > 48 * 48 || !e.active) {
+          e.x = e.targetX;
+          e.y = e.targetY;
+        } else if (edistSq > 0.01) {
+          const lerpAmt = Math.min(1.0, dt * 20);
+          e.x += edx * lerpAmt;
+          e.y += edy * lerpAmt;
+        }
+
+        if (edistSq > 0.05) {
+          e.animDist += Math.sqrt(edistSq) * 0.4;
+          if (e.animDist > 4) {
+            e.animDist = 0;
+            e.animFrame = (e.animFrame + 1) % 2;
+          }
+        }
+      }
+    });
+
+    // 4. Advance bullets smoothly between network packets
+    this.bullets.forEach(b => {
+      if (b.active) {
+        b.update(dt, window.mapManager);
+      }
+    });
+    this.bullets = this.bullets.filter(b => b.active);
 
     // Engine sound rumble based on client movement
     window.soundSystem.updateEngine(isMoving);

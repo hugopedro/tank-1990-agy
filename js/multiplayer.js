@@ -31,6 +31,13 @@ class MultiplayerManager {
     // Delta sync queues
     this.tileQueue = [];
     this.eventQueue = [];
+
+    // High-latency netcode (150ms+) sync buffers
+    this.clientInputSeq = 0;
+    this.inputHistory = [];
+    this.p2LastProcessedSeq = 0;
+    this.p1Target = null;
+    this.enemyIdCounter = 0;
   }
 
   init(game) {
@@ -217,6 +224,10 @@ class MultiplayerManager {
     conn.on('close', () => {
       this.isConnected = false;
       this.mode = 'OFFLINE';
+      this.clientInputSeq = 0;
+      this.inputHistory = [];
+      this.p2LastProcessedSeq = 0;
+      this.p1Target = null;
       if (this.game) {
         this.game.p2Input = { up: false, right: false, down: false, left: false, fire: false };
       }
@@ -262,6 +273,11 @@ class MultiplayerManager {
         if (data.kills) this.game.playerKills = data.kills;
         this.game.remainingEnemiesToSpawn = data.remainingEnemies;
 
+        // Discard acknowledged inputs from client input history buffer
+        if (data.ackSeq !== undefined) {
+          this.inputHistory = this.inputHistory.filter(item => item.seq > data.ackSeq);
+        }
+
         // Synchronize stage progression (e.g. Fase 1 -> Fase 2)
         if (data.stage && data.stage !== this.game.currentStage) {
           this.game.currentStage = data.stage;
@@ -281,49 +297,138 @@ class MultiplayerManager {
           this.game.curtainHeight = 0;
         }
 
-        // Sync Player 1 (Host authoritative tank)
+        // 1. Target interpolation for Player 1 (Host authoritative tank)
         const p1 = this.game.players[0];
         if (p1 && data.p1) {
-          p1.x = data.p1.x;
-          p1.y = data.p1.y;
-          p1.direction = data.p1.dir;
-          p1.tier = data.p1.tier;
-          p1.shieldTimer = data.p1.shield;
-          p1.active = data.p1.active;
+          this.p1Target = {
+            x: data.p1.x,
+            y: data.p1.y,
+            dir: data.p1.dir,
+            tier: data.p1.tier,
+            shield: data.p1.shield,
+            active: data.p1.active
+          };
+          const dx1 = data.p1.x - p1.x;
+          const dy1 = data.p1.y - p1.y;
+          // Snap immediately on large jumps (respawn, death, stage start)
+          if (!p1.active || dx1 * dx1 + dy1 * dy1 > 48 * 48) {
+            p1.x = data.p1.x;
+            p1.y = data.p1.y;
+            p1.direction = data.p1.dir;
+            p1.tier = data.p1.tier;
+            p1.shieldTimer = data.p1.shield;
+            p1.active = data.p1.active;
+          }
         }
 
-        // Soft reconcile Player 2 (Local client tank)
+        // 2. Client-side Prediction Reconciliation for Player 2 (Local client tank)
         const p2 = this.game.players[1];
         if (p2 && data.p2) {
-          const dx = data.p2.x - p2.x;
-          const dy = data.p2.y - p2.y;
-          // Reconcile if position drift exceeds threshold (6px)
-          if (dx * dx + dy * dy > 36) {
-            p2.x = data.p2.x;
-            p2.y = data.p2.y;
+          // Re-simulate pending unacknowledged inputs starting from Host's acknowledged position
+          let expectedX = data.p2.x;
+          let expectedY = data.p2.y;
+          const p2Speed = p2.speed || 1.35;
+
+          for (let i = 0; i < this.inputHistory.length; i++) {
+            const inp = this.inputHistory[i].input;
+            const stepDt = this.inputHistory[i].dt || 0.0166;
+            let mDir = -1;
+            if (inp.up) mDir = 0;
+            else if (inp.right) mDir = 1;
+            else if (inp.down) mDir = 2;
+            else if (inp.left) mDir = 3;
+
+            if (mDir !== -1) {
+              const stepDist = p2Speed * stepDt * 60;
+              if (mDir === 0) expectedY -= stepDist;
+              else if (mDir === 1) expectedX += stepDist;
+              else if (mDir === 2) expectedY += stepDist;
+              else if (mDir === 3) expectedX -= stepDist;
+
+              expectedX = Math.max(0, Math.min(192, expectedX));
+              expectedY = Math.max(0, Math.min(192, expectedY));
+            }
           }
+
+          const dx = expectedX - p2.x;
+          const dy = expectedY - p2.y;
+          const driftSq = dx * dx + dy * dy;
+
+          if (driftSq > 48 * 48 || !p2.active) {
+            // Hard snap on major desync or respawn
+            p2.x = expectedX;
+            p2.y = expectedY;
+            p2.renderOffsetX = 0;
+            p2.renderOffsetY = 0;
+          } else if (driftSq > 0.3) {
+            // Smooth reconciliation: fix physics position to expectedX/Y,
+            // absorb the jump into renderOffsetX/Y so visual position remains 100% continuous
+            const oldVisualX = p2.x + (p2.renderOffsetX || 0);
+            const oldVisualY = p2.y + (p2.renderOffsetY || 0);
+            p2.x = expectedX;
+            p2.y = expectedY;
+            p2.renderOffsetX = oldVisualX - expectedX;
+            p2.renderOffsetY = oldVisualY - expectedY;
+          }
+
           p2.tier = data.p2.tier;
           p2.shieldTimer = data.p2.shield;
           p2.active = data.p2.active;
         }
 
-        // Sync Enemies
+        // 3. Smooth Entity Sync for Enemies
         if (data.enemies) {
-          this.game.enemies = data.enemies.map(ed => {
-            const enemy = new EnemyTank(ed.x, ed.y, ed.type, ed.isBonus);
-            enemy.direction = ed.dir;
-            enemy.health = ed.health;
-            enemy.active = ed.active;
-            return enemy;
+          const activeIds = new Set();
+          data.enemies.forEach(ed => {
+            const enemyId = ed.id || `${ed.type}_${ed.x}_${ed.y}`;
+            activeIds.add(enemyId);
+            let enemy = this.game.enemies.find(e => e.netId === enemyId);
+            if (!enemy) {
+              enemy = new EnemyTank(ed.x, ed.y, ed.type, ed.isBonus);
+              enemy.netId = enemyId;
+              enemy.targetX = ed.x;
+              enemy.targetY = ed.y;
+              enemy.direction = ed.dir;
+              enemy.health = ed.health;
+              enemy.active = ed.active;
+              this.game.enemies.push(enemy);
+            } else {
+              enemy.targetX = ed.x;
+              enemy.targetY = ed.y;
+              enemy.direction = ed.dir;
+              enemy.health = ed.health;
+              enemy.active = ed.active;
+              enemy.isBonus = ed.isBonus;
+              const edx = ed.x - enemy.x;
+              const edy = ed.y - enemy.y;
+              if (edx * edx + edy * edy > 48 * 48) {
+                enemy.x = ed.x;
+                enemy.y = ed.y;
+              }
+            }
           });
+
+          // Retain only active enemies
+          this.game.enemies = this.game.enemies.filter(e => activeIds.has(e.netId));
         }
 
-        // Sync Bullets
+        // 4. Smooth Sync for Bullets
         if (data.bullets) {
-          this.game.bullets = data.bullets.map(bd => {
+          const serverBullets = data.bullets.map(bd => {
             return new Bullet(bd.x, bd.y, bd.dir, bd.speed, bd.owner, bd.canDestroySteel);
           });
-          // Update client p2.bullets count to allow shooting accurately
+
+          // Preserve predicted local player2 bullets that haven't reached host yet
+          const pendingLocalP2Bullets = this.game.bullets.filter(b => {
+            if (b.owner !== 'player2' || !b.clientPredicted || !b.active) return false;
+            // If server confirmed bullet is close, server bullet takes over
+            const confirmedByServer = serverBullets.some(sb =>
+              sb.owner === 'player2' && Math.hypot(sb.x - b.x, sb.y - b.y) < 20
+            );
+            return !confirmedByServer;
+          });
+
+          this.game.bullets = [...serverBullets, ...pendingLocalP2Bullets];
           if (p2) {
             p2.bullets = this.game.bullets.filter(b => b.owner === 'player2');
           }
@@ -368,6 +473,9 @@ class MultiplayerManager {
     if (this.mode === 'HOST') {
       if (data.type === 'INPUT') {
         this.game.p2Input = data.input;
+        if (data.seq && data.seq > this.p2LastProcessedSeq) {
+          this.p2LastProcessedSeq = data.seq;
+        }
       }
     }
   }
@@ -387,9 +495,15 @@ class MultiplayerManager {
       const p1 = this.game.players[0];
       const p2 = this.game.players[1];
 
+      // Assign persistent netId to enemies for client interpolation
+      this.game.enemies.forEach(e => {
+        if (!e.netId) e.netId = ++this.enemyIdCounter;
+      });
+
       const snapshot = {
         type: 'SYNC',
         ping: this.ping,
+        ackSeq: this.p2LastProcessedSeq || 0,
         state: this.game.state,
         stage: this.game.currentStage,
         lives: this.game.playerLives,
@@ -398,8 +512,24 @@ class MultiplayerManager {
         remainingEnemies: this.game.remainingEnemiesToSpawn,
         p1: p1 ? { x: p1.x, y: p1.y, dir: p1.direction, tier: p1.tier, shield: p1.shieldTimer, active: p1.active } : null,
         p2: p2 ? { x: p2.x, y: p2.y, dir: p2.direction, tier: p2.tier, shield: p2.shieldTimer, active: p2.active } : null,
-        enemies: this.game.enemies.map(e => ({ x: e.x, y: e.y, dir: e.direction, type: e.enemyType, health: e.health, active: e.active, isBonus: e.isBonus })),
-        bullets: this.game.bullets.map(b => ({ x: b.x, y: b.y, dir: b.direction, speed: b.speed, owner: b.owner, canDestroySteel: b.canDestroySteel })),
+        enemies: this.game.enemies.map(e => ({
+          id: e.netId,
+          x: e.x,
+          y: e.y,
+          dir: e.direction,
+          type: e.enemyType,
+          health: e.health,
+          active: e.active,
+          isBonus: e.isBonus
+        })),
+        bullets: this.game.bullets.map(b => ({
+          x: b.x,
+          y: b.y,
+          dir: b.direction,
+          speed: b.speed,
+          owner: b.owner,
+          canDestroySteel: b.canDestroySteel
+        })),
         powerup: this.game.currentPowerup && this.game.currentPowerup.active ? { x: this.game.currentPowerup.x, y: this.game.currentPowerup.y, type: this.game.currentPowerup.type, active: true } : null,
         tiles: this.tileQueue.splice(0, this.tileQueue.length),
         events: this.eventQueue.splice(0, this.eventQueue.length),
@@ -409,14 +539,36 @@ class MultiplayerManager {
       this.conn.send(snapshot);
     }
 
-    // CLIENT: Stream local inputs to Host (60Hz)
+    // CLIENT: Stream local inputs to Host with incremental sequencing (60Hz)
     if (this.mode === 'CLIENT') {
       const clientInput = (this.game.p2Input && (this.game.p2Input.up || this.game.p2Input.down || this.game.p2Input.left || this.game.p2Input.right || this.game.p2Input.fire))
         ? this.game.p2Input
         : this.game.p1Input;
+
+      this.clientInputSeq++;
+      const seq = this.clientInputSeq;
+
+      this.inputHistory.push({
+        seq: seq,
+        input: {
+          up: Boolean(clientInput.up),
+          down: Boolean(clientInput.down),
+          left: Boolean(clientInput.left),
+          right: Boolean(clientInput.right),
+          fire: Boolean(clientInput.fire)
+        },
+        dt: dt
+      });
+
+      if (this.inputHistory.length > 120) {
+        this.inputHistory.shift();
+      }
+
       this.conn.send({
         type: 'INPUT',
-        input: clientInput
+        seq: seq,
+        input: clientInput,
+        dt: dt
       });
     }
   }

@@ -702,8 +702,8 @@ class SpriteManager {
 
   drawModernTank(ctx, tank, time) {
     ctx.save();
-    const cx = tank.x + 8;
-    const cy = tank.y + 8;
+    const cx = tank.x + (tank.renderOffsetX || 0) + 8;
+    const cy = tank.y + (tank.renderOffsetY || 0) + 8;
 
     // 1. Drop Shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
@@ -1062,21 +1062,24 @@ class SpriteManager {
         }
       }
 
+      const rx = Math.round(tank.x + (tank.renderOffsetX || 0));
+      const ry = Math.round(tank.y + (tank.renderOffsetY || 0));
+
       const spr = this.cache.get(key);
       if (spr) {
-        ctx.drawImage(spr, Math.round(tank.x), Math.round(tank.y));
+        ctx.drawImage(spr, rx, ry);
       }
 
       if (tank.hasBoat) {
         ctx.strokeStyle = PALETTE.waterLight;
         ctx.lineWidth = 1;
-        ctx.strokeRect(Math.round(tank.x), Math.round(tank.y), 16, 16);
+        ctx.strokeRect(rx, ry, 16, 16);
       }
 
       if (tank.shieldTimer > 0) {
         const shieldSpr = this.cache.get(`shield_${this.shieldFrame}`);
         if (shieldSpr) {
-          ctx.drawImage(shieldSpr, Math.round(tank.x), Math.round(tank.y));
+          ctx.drawImage(shieldSpr, rx, ry);
         }
       }
     }

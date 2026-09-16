@@ -25,6 +25,8 @@ class BaseTank {
     this.isMoving = false;
     this.iceSlideDist = 0;
     this.freezeTimer = 0;
+    this.renderOffsetX = 0;
+    this.renderOffsetY = 0;
   }
 
   giveShield(duration) {
@@ -242,6 +244,8 @@ class PlayerTank extends BaseTank {
     this.hasBoat = false;
     this.bullets = [];
     this.active = true;
+    this.renderOffsetX = 0;
+    this.renderOffsetY = 0;
     this.giveShield(4.0);
   }
 
