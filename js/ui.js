@@ -388,9 +388,10 @@ class UIManager {
   }
 
   drawStageIntermission(ctx, stageNum, curtainPos, isModern = true, scale = 4) {
+    if (curtainPos <= 0) return;
     const W = 256 * scale;
     const H = 224 * scale;
-    const curH = curtainPos * scale;
+    const curH = Math.max(0, Math.min(H / 2, curtainPos * scale));
 
     ctx.save();
     // Modern sleek sliding door

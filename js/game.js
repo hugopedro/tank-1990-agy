@@ -437,9 +437,7 @@ class Game {
   }
 
   _updatePlaying(dt) {
-    if (this.curtainHeight > 0) {
-      this.curtainHeight = Math.max(0, this.curtainHeight - dt * 300);
-    }
+    this.curtainHeight = 0;
 
     // Client mode: simulate local Player 2 prediction & visuals only (Host is authoritative)
     if (window.multiplayerManager && window.multiplayerManager.mode === 'CLIENT') {
@@ -915,6 +913,9 @@ class Game {
       } else if (step === 4) {
         // Finished tallying, wait 2 seconds then start next stage
         window.uiManager.tallyStep++;
+        if (window.multiplayerManager && window.multiplayerManager.mode === 'CLIENT') {
+          return;
+        }
         setTimeout(() => {
           this.startStage(this.currentStage + 1);
         }, 2200);
@@ -1071,8 +1072,8 @@ class Game {
       4
     );
 
-    // 13. Stage Intermission Curtains
-    if (this.curtainHeight > 0) {
+    // 13. Stage Intermission Curtains (Only rendered during STAGE_START)
+    if (this.state === GAME_STATES.STAGE_START && this.curtainHeight > 0) {
       window.uiManager.drawStageIntermission(this.ctx, this.currentStage, this.curtainHeight, isModern, 4);
     }
 

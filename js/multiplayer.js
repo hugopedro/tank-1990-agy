@@ -262,9 +262,23 @@ class MultiplayerManager {
         if (data.kills) this.game.playerKills = data.kills;
         this.game.remainingEnemiesToSpawn = data.remainingEnemies;
 
-        // Synchronize game state (Stage Clear, Game Over, etc.)
+        // Synchronize stage progression (e.g. Fase 1 -> Fase 2)
+        if (data.stage && data.stage !== this.game.currentStage) {
+          this.game.currentStage = data.stage;
+          this.game.startStage(data.stage, false);
+          if (window.mapManager && data.grid) {
+            window.mapManager.grid.set(data.grid);
+          }
+        }
+
+        // Synchronize game state (Stage Start, Playing, Stage Clear, Game Over)
         if (data.state && this.game.state !== data.state) {
           this.game.state = data.state;
+          if (data.state === 'PLAYING') {
+            this.game.curtainHeight = 0;
+          }
+        } else if (this.game.state === 'PLAYING') {
+          this.game.curtainHeight = 0;
         }
 
         // Sync Player 1 (Host authoritative tank)
