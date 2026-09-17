@@ -334,7 +334,9 @@ class UIManager {
 
       // Menu Options with Glowing Selection
       const stageNum = (window.game && window.game.currentStage) ? window.game.currentStage : 1;
-      const options = ['1 JOGADOR', '🌐 MULTIPLAYER ONLINE', `SELECIONAR FASE: ${stageNum}`];
+      const stageName = (window.mapManager && window.mapManager.stageNames) ? (window.mapManager.stageNames[stageNum - 1] || '') : '';
+      const stageLabel = this.titleMenuIndex === 2 ? `◄ FASE ${stageNum} ►` : `FASE: ${stageNum}`;
+      const options = ['1 JOGADOR', '🌐 MULTIPLAYER ONLINE', stageLabel];
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
 
@@ -360,12 +362,22 @@ class UIManager {
           }
 
           ctx.fillStyle = '#ffeb3b';
-          ctx.font = 'bold 15px "Press Start 2P", sans-serif';
+          ctx.font = 'bold 14px "Press Start 2P", sans-serif';
           ctx.fillText(opt, W / 2 - 165, y + 6);
+          if (idx === 2 && stageName) {
+            ctx.font = 'bold 9.5px "Press Start 2P", sans-serif';
+            ctx.fillStyle = '#00e5ff';
+            ctx.fillText(`"${stageName.toUpperCase()}"`, W / 2 + 30, y + 5);
+          }
         } else {
           ctx.fillStyle = '#78909c';
           ctx.font = 'bold 14px "Press Start 2P", sans-serif';
           ctx.fillText(opt, W / 2 - 165, y + 6);
+          if (idx === 2 && stageName) {
+            ctx.font = 'bold 9.5px "Press Start 2P", sans-serif';
+            ctx.fillStyle = '#546e7a';
+            ctx.fillText(`"${stageName.toUpperCase()}"`, W / 2 + 30, y + 5);
+          }
         }
       });
 
@@ -381,7 +393,7 @@ class UIManager {
       ctx.textAlign = 'center';
       ctx.font = 'bold 9.5px "Press Start 2P", sans-serif';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.fillText('[M] SOM  •  [F] TELA CHEIA  •  [R] REINICIAR', W / 2, 775);
+      ctx.fillText('[◄/►] MUDAR FASE  •  [M] SOM  •  [F] TELA CHEIA', W / 2, 775);
 
     ctx.restore();
     ctx.restore();
@@ -419,7 +431,17 @@ class UIManager {
       ctx.font = 'bold 36px "Press Start 2P", sans-serif';
       ctx.shadowColor = '#ff6f00';
       ctx.shadowBlur = 12;
-      ctx.fillText(`FASE  ${stageNum}`, W / 2, H / 2 + 10);
+      ctx.fillText(`FASE  ${stageNum}`, W / 2, H / 2 + 5);
+
+      const stageName = (window.mapManager && window.mapManager.stageNames) ? window.mapManager.stageNames[stageNum - 1] : '';
+      if (stageName) {
+        ctx.font = 'bold 14px "Press Start 2P", sans-serif';
+        ctx.fillStyle = '#00e5ff';
+        ctx.shadowColor = '#00838f';
+        ctx.shadowBlur = 8;
+        ctx.fillText(`★ ${stageName.toUpperCase()} ★`, W / 2, H / 2 + 50);
+      }
+      ctx.shadowBlur = 0;
     }
     ctx.restore();
   }

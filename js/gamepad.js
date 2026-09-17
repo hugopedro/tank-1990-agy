@@ -186,6 +186,8 @@ class GamepadManager {
       const aJustPressed = (btn(0) || btn(9)) && !prev['confirm'];
       const upJustPressed = up && !prev['up'];
       const downJustPressed = down && !prev['down'];
+      const leftJustPressed = left && !prev['left'];
+      const rightJustPressed = right && !prev['right'];
 
       // Multiplayer Dialog Navigation
       if (window.multiplayerManager && window.multiplayerManager.dialogVisible) {
@@ -208,6 +210,14 @@ class GamepadManager {
         } else if (downJustPressed) {
           window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 1) % 3;
           window.soundSystem.playShot();
+        } else if (leftJustPressed) {
+          if (window.uiManager && window.uiManager.titleMenuIndex === 2) {
+            game.changeTitleStage(-1);
+          }
+        } else if (rightJustPressed) {
+          if (window.uiManager && window.uiManager.titleMenuIndex === 2) {
+            game.changeTitleStage(1);
+          }
         } else if (aJustPressed) {
           game._selectTitleMenuOption();
         }
@@ -245,7 +255,9 @@ class GamepadManager {
         4: btn(4),
         confirm: btn(0) || btn(9),
         up: up,
-        down: down
+        down: down,
+        left: left,
+        right: right
       };
     }
   }

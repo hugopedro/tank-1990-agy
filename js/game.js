@@ -124,7 +124,8 @@ class Game {
       }
 
       if (e.key === 'n' || e.key === 'N') {
-        const next = (this.currentStage % 5) + 1;
+        const total = (window.mapManager && window.mapManager.stages) ? window.mapManager.stages.length : 50;
+        const next = (this.currentStage % total) + 1;
         this.startStage(next);
         window.soundSystem.playScoreDing();
         return;
@@ -151,6 +152,14 @@ class Game {
         } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
           window.uiManager.titleMenuIndex = (window.uiManager.titleMenuIndex + 1) % 3;
           window.soundSystem.playShot();
+        } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          if (window.uiManager.titleMenuIndex === 2) {
+            this.changeTitleStage(-1);
+          }
+        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          if (window.uiManager.titleMenuIndex === 2) {
+            this.changeTitleStage(1);
+          }
         } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'j' || e.key === 'J') {
           this._selectTitleMenuOption();
         }
@@ -293,6 +302,15 @@ class Game {
     }
   }
 
+  changeTitleStage(delta) {
+    const total = (window.mapManager && window.mapManager.stages) ? window.mapManager.stages.length : 50;
+    let next = (this.currentStage || 1) + delta;
+    if (next < 1) next = total;
+    if (next > total) next = 1;
+    this.currentStage = next;
+    if (window.soundSystem) window.soundSystem.playScoreDing();
+  }
+
   _selectTitleMenuOption() {
     const opt = window.uiManager.titleMenuIndex;
     if (opt === 0) {
@@ -306,8 +324,7 @@ class Game {
       }
     } else if (opt === 2) {
       // Selecionar Fase
-      this.currentStage = (this.currentStage % 5) + 1;
-      window.soundSystem.playScoreDing();
+      this.changeTitleStage(1);
     }
   }
 
