@@ -11,13 +11,13 @@ class BaseTank {
     this.width = 16;
     this.height = 16;
     this.direction = 0; // 0=UP, 1=RIGHT, 2=DOWN, 3=LEFT
-    this.speed = 1.3;
+    this.speed = 0.95;
     this.isPlayer = isPlayer;
     this.animFrame = 0;
     this.animDist = 0;
     this.bullets = [];
     this.maxBullets = 1;
-    this.bulletSpeed = 3.2;
+    this.bulletSpeed = 2.2;
     this.canDestroySteel = false;
     this.hasBoat = false;
     this.shieldTimer = 0;
@@ -225,8 +225,8 @@ class PlayerTank extends BaseTank {
     this.spawnX = startX;
     this.spawnY = startY;
     this.tier = 0;
-    this.speed = 1.35;
-    this.bulletSpeed = 3.2;
+    this.speed = 0.95;
+    this.bulletSpeed = 2.2;
     this.maxBullets = 1;
     this.canDestroySteel = false;
     this.giveShield(3.5); // Initial invulnerability
@@ -237,10 +237,8 @@ class PlayerTank extends BaseTank {
     this.y = this.spawnY;
     this.direction = 0;
     this.tier = 0;
-    this.speed = 1.35;
-    this.bulletSpeed = 3.2;
-    this.maxBullets = 1;
-    this.canDestroySteel = false;
+    this.speed = 0.95;
+    this._applyTierStats();
     this.hasBoat = false;
     this.bullets = [];
     this.active = true;
@@ -251,15 +249,36 @@ class PlayerTank extends BaseTank {
 
   upgradeTier() {
     this.tier = Math.min(3, this.tier + 1);
-    if (this.tier === 1) {
-      this.bulletSpeed = 4.4;
+    this._applyTierStats();
+  }
+
+  downgradeTier() {
+    if (this.tier > 0) {
+      this.tier = Math.max(0, this.tier - 1);
+      this._applyTierStats();
+      this.giveShield(1.2); // Escudo breve de invulnerabilidade
+      return true;
+    }
+    return false;
+  }
+
+  _applyTierStats() {
+    if (this.tier === 0) {
+      this.bulletSpeed = 2.2;
+      this.maxBullets = 1;
+      this.canDestroySteel = false;
+    } else if (this.tier === 1) {
+      this.bulletSpeed = 3.0;
+      this.maxBullets = 1;
+      this.canDestroySteel = false;
     } else if (this.tier === 2) {
-      this.bulletSpeed = 4.4;
+      this.bulletSpeed = 3.0;
       this.maxBullets = 2;
-    } else if (this.tier === 3) {
-      this.bulletSpeed = 4.6;
+      this.canDestroySteel = false;
+    } else if (this.tier >= 3) {
+      this.bulletSpeed = 3.2;
       this.maxBullets = 2;
-      this.canDestroySteel = true; // Can break steel and trees!
+      this.canDestroySteel = true; // Quebra aço e vegetação
     }
   }
 
@@ -301,33 +320,33 @@ class EnemyTank extends BaseTank {
     this.direction = 2; // Default facing DOWN towards base
 
     // AI timing
-    this.decisionTimer = Math.random() * 0.5 + 0.3;
-    this.fireTimer = Math.random() * 1.0 + 0.5;
+    this.decisionTimer = Math.random() * 1.0 + 0.8;
+    this.fireTimer = Math.random() * 1.5 + 1.0;
     this.stuckTimer = 0;
 
-    // Attributes by enemy type
+    // Attributes by enemy type (Authentic NES Battle City pacing)
     switch (type) {
       case 'basic':
-        this.speed = 0.95;
-        this.bulletSpeed = 2.8;
+        this.speed = 0.70;
+        this.bulletSpeed = 1.9;
         this.health = 1;
         this.points = 100;
         break;
       case 'fast':
-        this.speed = 1.95;
-        this.bulletSpeed = 3.4;
+        this.speed = 1.30;
+        this.bulletSpeed = 2.4;
         this.health = 1;
         this.points = 200;
         break;
       case 'power':
-        this.speed = 1.15;
-        this.bulletSpeed = 4.8;
+        this.speed = 0.80;
+        this.bulletSpeed = 3.0;
         this.health = 1;
         this.points = 300;
         break;
       case 'armor':
-        this.speed = 0.95;
-        this.bulletSpeed = 3.0;
+        this.speed = 0.70;
+        this.bulletSpeed = 2.0;
         this.health = 4; // 4 hits to destroy!
         this.points = 400;
         break;
@@ -351,7 +370,7 @@ class EnemyTank extends BaseTank {
     // AI Decision Timer
     this.decisionTimer -= dt;
     if (this.decisionTimer <= 0) {
-      this.decisionTimer = Math.random() * 0.8 + 0.5;
+      this.decisionTimer = Math.random() * 1.2 + 0.8;
       this._chooseDirection(players, eaglePos);
     }
 

@@ -76,6 +76,8 @@ class Game {
     this.stageTransitionTimer = 0;
     this.curtainHeight = 0;
     this.gameOverY = 224;
+    this.gameOverMenuIndex = 0;
+    this.gameOverMenuReady = false;
 
     this._setupInputListeners();
   }
@@ -155,6 +157,26 @@ class Game {
         return;
       }
 
+      // Game Over Menu Navigation
+      if (this.state === GAME_STATES.GAME_OVER) {
+        if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+          this.gameOverMenuIndex = (this.gameOverMenuIndex + 1) % 2;
+          window.soundSystem.playShot();
+          return;
+        } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+          this.gameOverMenuIndex = (this.gameOverMenuIndex + 1) % 2;
+          window.soundSystem.playShot();
+          return;
+        } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'j' || e.key === 'J') {
+          this._selectGameOverOption();
+          return;
+        } else if (e.key === 'Escape') {
+          this.state = GAME_STATES.TITLE;
+          if (window.uiManager) window.uiManager.resetTitleIntro();
+          return;
+        }
+      }
+
       // In-game Pause
       if (e.key === 'p' || e.key === 'P' || (e.key === 'Enter' && this.state === GAME_STATES.PLAYING)) {
         this.togglePause();
@@ -199,6 +221,29 @@ class Game {
       this.keysP2 = { up: false, right: false, down: false, left: false, fire: false };
       this.syncInputs();
     });
+
+    // Canvas click for Game Over selection
+    if (this.canvas) {
+      this.canvas.addEventListener('click', e => {
+        if (this.state === GAME_STATES.GAME_OVER && this.gameOverMenuReady) {
+          const rect = this.canvas.getBoundingClientRect();
+          const scaleX = this.width / rect.width;
+          const scaleY = this.height / rect.height;
+          const clickX = (e.clientX - rect.left) * scaleX;
+          const clickY = (e.clientY - rect.top) * scaleY;
+
+          if (clickX >= 250 && clickX <= 774) {
+            if (clickY >= 500 && clickY <= 555) {
+              this.gameOverMenuIndex = 0;
+              this._selectGameOverOption();
+            } else if (clickY >= 556 && clickY <= 615) {
+              this.gameOverMenuIndex = 1;
+              this._selectGameOverOption();
+            }
+          }
+        }
+      });
+    }
   }
 
   syncInputs() {
@@ -281,12 +326,18 @@ class Game {
     this.remainingEnemiesToSpawn = 20;
     this.enemiesDefeated = 0;
     this.enemyFreezeTimer = 0;
-    this.enemySpawnTimer = 0.5;
+    this.enemySpawnTimer = 1.5;
 
     // Reset kills count for stage
     this.playerKills = [
       { basic: 0, fast: 0, power: 0, armor: 0 },
       { basic: 0, fast: 0, power: 0, armor: 0 }
+    ];
+
+    // Restore player lives for all players to at least 3 on each stage!
+    this.playerLives = [
+      Math.max(3, this.playerLives ? (this.playerLives[0] || 0) : 3),
+      Math.max(3, this.playerLives ? (this.playerLives[1] || 0) : 3)
     ];
 
     // Load Map
@@ -667,7 +718,7 @@ class Game {
 
     this.enemySpawnTimer -= dt;
     if (this.enemySpawnTimer <= 0) {
-      this.enemySpawnTimer = 2.8;
+      this.enemySpawnTimer = 3.5;
 
       const spawnPos = this.spawnPositions[this.spawnPosIndex];
       this.spawnPosIndex = (this.spawnPosIndex + 1) % this.spawnPositions.length;
@@ -781,6 +832,14 @@ class Game {
               // Harmlessly bounced against shield
               window.soundSystem.playSteelHit();
               this.addExplosion(b1.x, b1.y, false);
+            } else if (player.tier > 0) {
+              // Upgraded tank takes a downgrade instead of dying!
+              player.downgradeTier();
+              window.soundSystem.playSteelHit();
+              this.addExplosion(b1.x, b1.y, false);
+              if (window.gamepadManager) {
+                window.gamepadManager.rumble(player.playerIndex, 0.4, 0.4, 150);
+              }
             } else {
               // Destroy Player
               this.killPlayer(player.playerIndex);
@@ -850,12 +909,11 @@ class Game {
     if (this.state === GAME_STATES.GAME_OVER) return;
     this.state = GAME_STATES.GAME_OVER;
     this.gameOverY = 224;
+    this.gameOverMenuIndex = 0;
+    this.gameOverMenuReady = false;
     window.soundSystem.stopEngine();
     window.soundSystem.playGameOver(() => {
-      setTimeout(() => {
-        this.state = GAME_STATES.TITLE;
-        if (window.uiManager) window.uiManager.resetTitleIntro();
-      }, 2500);
+      this.gameOverMenuReady = true;
     });
   }
 
@@ -1031,13 +1089,52 @@ class Game {
   }
 
   _updateGameOver(dt) {
-    if (this.gameOverY > 110) {
-      this.gameOverY -= dt * 65;
+    if (this.gameOverY > 75) {
+      this.gameOverY -= dt * 75;
+    } else {
+      this.gameOverMenuReady = true;
     }
   }
 
   _renderGameOver() {
-    window.uiManager.drawGameOver(this.ctx, this.gameOverY, true, this.scale);
+    window.uiManager.drawGameOver(
+      this.ctx,
+      this.gameOverY,
+      true,
+      this.scale,
+      this.gameOverMenuIndex,
+      this.gameOverMenuReady,
+      this.isTwoPlayer
+    );
+  }
+
+  _selectGameOverOption() {
+    if (this.gameOverMenuIndex === 0) {
+      this.restartGame(this.isTwoPlayer);
+      if (window.soundSystem) window.soundSystem.playScoreDing();
+    } else {
+      this.state = GAME_STATES.TITLE;
+      if (window.uiManager) window.uiManager.resetTitleIntro();
+      if (window.soundSystem) window.soundSystem.playPause();
+    }
+  }
+
+  restartGame(twoPlayer = false) {
+    this.isTwoPlayer = Boolean(twoPlayer);
+    this.currentStage = 1;
+    this.playerLives = [3, 3];
+    this.playerScores = [0, 0];
+    this.gameOverMenuIndex = 0;
+    this.gameOverMenuReady = false;
+    this.startStage(1, false);
+
+    if (window.multiplayerManager && window.multiplayerManager.isConnected) {
+      if (window.multiplayerManager.mode === 'HOST') {
+        window.multiplayerManager.broadcastRestart(1);
+      } else if (window.multiplayerManager.mode === 'CLIENT') {
+        window.multiplayerManager.requestRestart();
+      }
+    }
   }
 
   _renderPauseOverlay() {

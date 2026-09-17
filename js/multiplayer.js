@@ -255,13 +255,17 @@ class MultiplayerManager {
 
     // CLIENT RECEIVING STATE SNAPSHOT FROM HOST
     if (this.mode === 'CLIENT') {
-      if (data.type === 'INIT') {
+      if (data.type === 'INIT' || data.type === 'RESTART') {
         this.game.isTwoPlayer = true;
-        this.game.currentStage = data.stage;
-        this.game.startStage(data.stage, false);
+        this.game.currentStage = data.stage || 1;
+        this.game.playerLives = [3, 3];
+        if (data.type === 'RESTART') {
+          this.game.playerScores = [0, 0];
+        }
+        this.game.startStage(data.stage || 1, false);
         if (window.mapManager && data.grid) {
           window.mapManager.grid.set(data.grid);
-          window.mapManager.isEagleAlive = data.isEagleAlive;
+          window.mapManager.isEagleAlive = data.isEagleAlive !== undefined ? data.isEagleAlive : true;
         }
         return;
       }
@@ -327,7 +331,7 @@ class MultiplayerManager {
           // Re-simulate pending unacknowledged inputs starting from Host's acknowledged position
           let expectedX = data.p2.x;
           let expectedY = data.p2.y;
-          const p2Speed = p2.speed || 1.35;
+          const p2Speed = p2.speed || 0.95;
 
           for (let i = 0; i < this.inputHistory.length; i++) {
             const inp = this.inputHistory[i].input;
@@ -476,6 +480,9 @@ class MultiplayerManager {
         if (data.seq && data.seq > this.p2LastProcessedSeq) {
           this.p2LastProcessedSeq = data.seq;
         }
+      }
+      if (data.type === 'REQUEST_RESTART') {
+        this.game.restartGame(true);
       }
     }
   }
@@ -796,6 +803,25 @@ class MultiplayerManager {
     }
 
     return true; // Consume keyboard input while modal is visible
+  }
+
+  broadcastRestart(stage = 1) {
+    if (this.mode === 'HOST' && this.conn && this.conn.open) {
+      this.conn.send({
+        type: 'RESTART',
+        stage: stage,
+        grid: window.mapManager ? Array.from(window.mapManager.grid) : null,
+        isEagleAlive: true
+      });
+    }
+  }
+
+  requestRestart() {
+    if (this.mode === 'CLIENT' && this.conn && this.conn.open) {
+      this.conn.send({
+        type: 'REQUEST_RESTART'
+      });
+    }
   }
 }
 

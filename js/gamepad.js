@@ -221,10 +221,19 @@ class GamepadManager {
           if (window.uiManager) window.uiManager.resetTitleIntro();
           window.soundSystem.playPause();
         }
-        if (game.state === 'GAME_OVER' && (startJustPressed || aJustPressed)) {
-          game.state = 'TITLE';
-          if (window.uiManager) window.uiManager.resetTitleIntro();
-          window.soundSystem.playPause();
+        if (game.state === 'GAME_OVER') {
+          if (upJustPressed || downJustPressed) {
+            game.gameOverMenuIndex = (game.gameOverMenuIndex + 1) % 2;
+            window.soundSystem.playShot();
+          }
+          if (startJustPressed || aJustPressed) {
+            game._selectGameOverOption();
+          }
+          if (backJustPressed) {
+            game.state = 'TITLE';
+            if (window.uiManager) window.uiManager.resetTitleIntro();
+            window.soundSystem.playPause();
+          }
         }
       }
 

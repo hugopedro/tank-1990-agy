@@ -424,16 +424,96 @@ class UIManager {
     ctx.restore();
   }
 
-  drawGameOver(ctx, y, isModern = true, scale = 4) {
+  drawGameOver(ctx, y, isModern = true, scale = 4, menuIndex = 0, menuReady = false, isTwoPlayer = false) {
     const W = 256 * scale;
     ctx.save();
     ctx.textAlign = 'center';
 
+    // Iconic GAME OVER Header with Red Neon Glow
     ctx.fillStyle = '#ff1744';
     ctx.shadowColor = '#d50000';
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = 24;
     ctx.font = 'bold 44px "Press Start 2P", sans-serif';
     ctx.fillText('GAME OVER', W / 2, y * scale);
+    ctx.shadowBlur = 0;
+
+    // Interactive Restart Menu Modal
+    if (menuReady) {
+      const dw = 560;
+      const dh = 240;
+      const dx = (W - dw) / 2;
+      const dy = 440;
+
+      // Card Background
+      ctx.fillStyle = 'rgba(10, 12, 20, 0.92)';
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(dx, dy, dw, dh, 14);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.fillRect(dx, dy, dw, dh);
+        ctx.strokeRect(dx, dy, dw, dh);
+      }
+
+      // Title in Card
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 13px "Press Start 2P", monospace';
+      ctx.fillText('FIM DE JOGO - O QUE DESEJA FAZER?', W / 2, dy + 40);
+
+      // Option 1: Nova Partida
+      const opt1Y = dy + 70;
+      const isOpt1 = (menuIndex === 0);
+      if (isOpt1) {
+        ctx.fillStyle = 'rgba(255, 235, 59, 0.15)';
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 1.5;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(dx + 30, opt1Y, dw - 60, 42, 8);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(dx + 30, opt1Y, dw - 60, 42);
+          ctx.strokeRect(dx + 30, opt1Y, dw - 60, 42);
+        }
+      }
+      ctx.fillStyle = isOpt1 ? '#ffeb3b' : '#90caf9';
+      ctx.font = 'bold 12px "Press Start 2P", sans-serif';
+      const opt1Label = (isTwoPlayer ? '▶ NOVA PARTIDA (2 PLAYERS)' : '▶ NOVA PARTIDA');
+      ctx.fillText(isOpt1 ? opt1Label : opt1Label.replace('▶ ', '  '), W / 2, opt1Y + 26);
+
+      // Option 2: Menu Principal
+      const opt2Y = dy + 124;
+      const isOpt2 = (menuIndex === 1);
+      if (isOpt2) {
+        ctx.fillStyle = 'rgba(255, 235, 59, 0.15)';
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 1.5;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(dx + 30, opt2Y, dw - 60, 42, 8);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(dx + 30, opt2Y, dw - 60, 42);
+          ctx.strokeRect(dx + 30, opt2Y, dw - 60, 42);
+        }
+      }
+      ctx.fillStyle = isOpt2 ? '#ffeb3b' : '#90caf9';
+      ctx.font = 'bold 12px "Press Start 2P", sans-serif';
+      const opt2Label = '▶ MENU PRINCIPAL';
+      ctx.fillText(isOpt2 ? opt2Label : '  MENU PRINCIPAL', W / 2, opt2Y + 26);
+
+      // Footer Hint
+      ctx.fillStyle = '#607d8b';
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.fillText('[ENTER / START / CLIQUE] CONFIRMAR', W / 2, dy + 195);
+      ctx.fillText('[ESC / SELECT] VOLTAR AO MENU', W / 2, dy + 218);
+    }
+
     ctx.restore();
   }
 
