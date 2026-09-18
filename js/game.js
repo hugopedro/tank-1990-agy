@@ -78,6 +78,7 @@ class Game {
     this.gameOverY = 224;
     this.gameOverMenuIndex = 0;
     this.gameOverMenuReady = false;
+    this.gameOverLockTimer = 0;
 
     this._setupInputListeners();
   }
@@ -168,6 +169,11 @@ class Game {
 
       // Game Over Menu Navigation
       if (this.state === GAME_STATES.GAME_OVER) {
+        // Strict 5-second control lockout after Game Over
+        if (!this.gameOverMenuReady || this.gameOverLockTimer > 0) {
+          return;
+        }
+
         if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
           this.gameOverMenuIndex = (this.gameOverMenuIndex + 1) % 2;
           window.soundSystem.playShot();
@@ -234,7 +240,7 @@ class Game {
     // Canvas click for Game Over selection
     if (this.canvas) {
       this.canvas.addEventListener('click', e => {
-        if (this.state === GAME_STATES.GAME_OVER && this.gameOverMenuReady) {
+        if (this.state === GAME_STATES.GAME_OVER && this.gameOverMenuReady && (!this.gameOverLockTimer || this.gameOverLockTimer <= 0)) {
           const rect = this.canvas.getBoundingClientRect();
           const scaleX = this.width / rect.width;
           const scaleY = this.height / rect.height;
@@ -928,10 +934,9 @@ class Game {
     this.gameOverY = 224;
     this.gameOverMenuIndex = 0;
     this.gameOverMenuReady = false;
+    this.gameOverLockTimer = 5.0; // 5.0 seconds control lockout
     window.soundSystem.stopEngine();
-    window.soundSystem.playGameOver(() => {
-      this.gameOverMenuReady = true;
-    });
+    window.soundSystem.playGameOver();
   }
 
   addScore(playerIdx, points, x, y) {
@@ -1108,6 +1113,14 @@ class Game {
   _updateGameOver(dt) {
     if (this.gameOverY > 75) {
       this.gameOverY -= dt * 75;
+    }
+    if (this.gameOverLockTimer > 0) {
+      this.gameOverLockTimer = Math.max(0, this.gameOverLockTimer - dt);
+      if (this.gameOverLockTimer <= 0) {
+        this.gameOverMenuReady = true;
+      } else {
+        this.gameOverMenuReady = false;
+      }
     } else {
       this.gameOverMenuReady = true;
     }

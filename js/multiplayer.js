@@ -293,7 +293,11 @@ class MultiplayerManager {
 
         // Synchronize game state (Stage Start, Playing, Stage Clear, Game Over)
         if (data.state && this.game.state !== data.state) {
-          this.game.state = data.state;
+          if (data.state === 'GAME_OVER') {
+            this.game.triggerGameOver();
+          } else {
+            this.game.state = data.state;
+          }
           if (data.state === 'PLAYING') {
             this.game.curtainHeight = 0;
           }

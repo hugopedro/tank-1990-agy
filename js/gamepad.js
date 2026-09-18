@@ -232,6 +232,9 @@ class GamepadManager {
           window.soundSystem.playPause();
         }
         if (game.state === 'GAME_OVER') {
+          if (!game.gameOverMenuReady || (game.gameOverLockTimer && game.gameOverLockTimer > 0)) {
+            return;
+          }
           if (upJustPressed || downJustPressed) {
             game.gameOverMenuIndex = (game.gameOverMenuIndex + 1) % 2;
             window.soundSystem.playShot();

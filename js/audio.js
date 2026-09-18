@@ -257,21 +257,29 @@ class SoundSystem {
     if (!this.ctx) return;
 
     const t = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    // Authentic NES Battle City ROM Sound Sequence ($EE48):
+    // 4-frame (~66.7ms) pulse wave jingle when bonus drops
+    const notes = [391.12, 329.00, 391.12, 438.67, 391.12, 438.67, 492.78, 522.71];
+    const frameDur = 4 / 60; // 0.0667s
 
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(300, t);
-    osc.frequency.linearRampToValueAtTime(1200, t + 0.2);
+    notes.forEach((freq, idx) => {
+      const st = t + idx * frameDur;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
 
-    gain.gain.setValueAtTime(0.18, t);
-    gain.gain.linearRampToValueAtTime(0.01, t + 0.2);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, st);
 
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
+      gain.gain.setValueAtTime(0.18, st);
+      gain.gain.setValueAtTime(0.18, st + frameDur * 0.7);
+      gain.gain.linearRampToValueAtTime(0.001, st + frameDur);
 
-    osc.start(t);
-    osc.stop(t + 0.2);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(st);
+      osc.stop(st + frameDur);
+    });
   }
 
   playPowerupGet() {
@@ -280,21 +288,33 @@ class SoundSystem {
     if (!this.ctx) return;
 
     const t = this.ctx.currentTime;
-    const tones = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
-    tones.forEach((freq, idx) => {
+    // Authentic NES Battle City ROM Sound Sequence ($EE19):
+    // 3-frame (~50ms) staccato pulse wave arpeggio:
+    // C Major (G4, C5, E5, G5) -> B Major (F#4, B4, D#5, F#5) -> C Major High (C5, E5, G5, C6, E6)
+    const notes = [
+      391.12, 522.71, 658.00, 782.24,
+      369.18, 492.78, 621.45, 735.93,
+      522.71, 658.00, 782.24, 1045.43, 1316.01
+    ];
+    const frameDur = 3 / 60; // 0.050s per note
+
+    notes.forEach((freq, idx) => {
+      const st = t + idx * frameDur;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      const st = t + idx * 0.04;
+
       osc.type = 'square';
       osc.frequency.setValueAtTime(freq, st);
-      gain.gain.setValueAtTime(0.18, st);
-      gain.gain.exponentialRampToValueAtTime(0.01, st + 0.08);
+
+      gain.gain.setValueAtTime(0.20, st);
+      gain.gain.setValueAtTime(0.20, st + frameDur * 0.75);
+      gain.gain.linearRampToValueAtTime(0.001, st + frameDur);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
 
       osc.start(st);
-      osc.stop(st + 0.08);
+      osc.stop(st + frameDur);
     });
   }
 

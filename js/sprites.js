@@ -239,53 +239,249 @@ class SpriteManager {
       ctx.fillRect(0, 0, 16, 16);
 
       switch (type) {
-        case 'helmet':
-          ctx.fillStyle = '#fce4a0';
-          ctx.fillRect(3, 5, 10, 7);
+        case 'helmet': {
+          // ESCUDO (Heraldic Knight Shield)
+          // Steel/Silver outer rim
+          ctx.fillStyle = '#b0bec5';
+          ctx.fillRect(2, 1, 12, 2); // Top rim
+          ctx.fillRect(1, 2, 14, 7); // Main body width
+          ctx.fillRect(2, 9, 12, 2);
+          ctx.fillRect(3, 11, 10, 1);
+          ctx.fillRect(4, 12, 8, 1);
+          ctx.fillRect(5, 13, 6, 1);
+          ctx.fillRect(6, 14, 4, 1);
+          ctx.fillRect(7, 15, 2, 1); // Bottom tip
+
+          // Inner Field: Royal Cobalt Blue
+          ctx.fillStyle = '#0288d1';
+          ctx.fillRect(3, 3, 10, 6);
+          ctx.fillRect(4, 9, 8, 2);
+          ctx.fillRect(5, 11, 6, 1);
+          ctx.fillRect(6, 12, 4, 1);
+          ctx.fillRect(7, 13, 2, 1);
+
+          // Center Heraldic Cross (Gold)
+          ctx.fillStyle = '#ffd700';
+          ctx.fillRect(7, 3, 2, 8); // Vertical arm
+          ctx.fillRect(4, 5, 8, 2); // Horizontal arm
+
+          // Specular highlights (Pure White)
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(4, 6, 8, 4);
+          ctx.fillRect(3, 1, 4, 1);
+          ctx.fillRect(1, 3, 1, 5);
+          ctx.fillRect(7, 5, 2, 2); // Center gleam
           break;
-        case 'clock':
+        }
+
+        case 'star': {
+          // SARGENTO (Military Sergeant Rank Chevrons - Promoção de Tanque)
+          // Tactical dark patch backing
+          ctx.fillStyle = '#1b2228';
+          ctx.fillRect(2, 1, 12, 14);
+
+          // Top Chevron 1 (Bright Gold ᐱ)
+          ctx.fillStyle = '#ffd700';
+          ctx.fillRect(7, 1, 2, 2); // Peak
+          ctx.fillRect(5, 2, 2, 2);
+          ctx.fillRect(9, 2, 2, 2);
+          ctx.fillRect(3, 3, 2, 2);
+          ctx.fillRect(11, 3, 2, 2);
+
+          // Middle Chevron 2 (Bright Gold ᐱ)
+          ctx.fillRect(7, 5, 2, 2);
+          ctx.fillRect(5, 6, 2, 2);
+          ctx.fillRect(9, 6, 2, 2);
+          ctx.fillRect(3, 7, 2, 2);
+          ctx.fillRect(11, 7, 2, 2);
+
+          // Bottom Chevron 3 (Bright Gold ᐱ)
+          ctx.fillRect(7, 9, 2, 2);
+          ctx.fillRect(5, 10, 2, 2);
+          ctx.fillRect(9, 10, 2, 2);
+          ctx.fillRect(3, 11, 2, 2);
+          ctx.fillRect(11, 11, 2, 2);
+
+          // Crisp White Highlights on chevron peaks
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(4, 4, 8, 8);
-          ctx.fillStyle = '#e40058';
-          ctx.fillRect(7, 5, 2, 4);
-          break;
-        case 'shovel':
+          ctx.fillRect(7, 1, 2, 1);
+          ctx.fillRect(7, 5, 2, 1);
+          ctx.fillRect(7, 9, 2, 1);
+
+          // Base rocker bar at bottom
+          ctx.fillStyle = '#ff9800';
+          ctx.fillRect(4, 13, 8, 2);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(7, 1, 2, 7);
-          ctx.fillStyle = '#b8b8f8';
-          ctx.fillRect(5, 8, 6, 6);
+          ctx.fillRect(7, 13, 2, 2);
           break;
-        case 'star':
-          ctx.fillStyle = '#fce4a0';
-          ctx.fillRect(7, 2, 2, 12);
-          ctx.fillRect(2, 6, 12, 2);
+        }
+
+        case 'clock': {
+          // RELÓGIO (Stopwatch / Clock Face)
+          // Top ring/crown
+          ctx.fillStyle = '#ffd700';
+          ctx.fillRect(7, 0, 2, 2);
+          ctx.fillRect(6, 1, 4, 1);
+
+          // Outer bezel ring
+          ctx.fillStyle = '#37474f';
+          ctx.fillRect(3, 2, 10, 13);
+          ctx.fillRect(2, 3, 12, 11);
+
+          // Dial face (Crisp White)
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(6, 5, 4, 4);
+          ctx.fillRect(4, 3, 8, 11);
+          ctx.fillRect(3, 4, 10, 9);
+
+          // Hour tick marks (12, 3, 6, 9)
+          ctx.fillStyle = '#78909c';
+          ctx.fillRect(7, 3, 2, 1);  // 12
+          ctx.fillRect(12, 8, 1, 2); // 3
+          ctx.fillRect(7, 13, 2, 1); // 6
+          ctx.fillRect(3, 8, 1, 2);  // 9
+
+          // Clock Hands (Red hands at 10:10)
+          ctx.fillStyle = '#d50000';
+          ctx.fillRect(7, 8, 2, 2); // Hub
+          ctx.fillRect(5, 6, 2, 2); // Hour hand
+          ctx.fillRect(9, 6, 2, 2); // Minute hand
           break;
-        case 'grenade':
-          ctx.fillStyle = '#00a800';
-          ctx.fillRect(4, 6, 8, 8);
+        }
+
+        case 'shovel': {
+          // PÁ (Entrenching Spade Shovel)
+          // Top T-Handle
+          ctx.fillStyle = '#bcaaa4';
+          ctx.fillRect(5, 1, 6, 2);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(6, 2, 4, 3);
+          ctx.fillRect(6, 1, 4, 1);
+
+          // Shaft (Wood pole)
+          ctx.fillStyle = '#8d6e63';
+          ctx.fillRect(7, 3, 2, 5);
+
+          // Spade blade (Steel scoop)
+          ctx.fillStyle = '#cfd8dc';
+          ctx.fillRect(4, 8, 8, 4);
+          ctx.fillRect(5, 12, 6, 2);
+          ctx.fillRect(7, 14, 2, 1); // Tip
+
+          // Blade center ridge & highlights
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(5, 9, 2, 3);
+          ctx.fillStyle = '#546e7a';
+          ctx.fillRect(7, 8, 2, 5); // Spine
+          ctx.fillRect(9, 9, 2, 3);
           break;
-        case 'tank':
-          ctx.fillStyle = '#fc9838';
-          ctx.fillRect(3, 4, 10, 8);
+        }
+
+        case 'grenade': {
+          // GRANADA (Pineapple Fragmentation Grenade)
+          // Fuse & safety pin
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(5, 1, 2, 2); // Pin ring
+          ctx.fillStyle = '#cfd8dc';
+          ctx.fillRect(7, 2, 3, 3); // Lever
+
+          // Grenade body (Olive green)
+          ctx.fillStyle = '#33691e';
+          ctx.fillRect(4, 5, 8, 9);
+          ctx.fillRect(3, 6, 10, 7);
+
+          // Fragmentation ribbed grid (Light olive segments)
+          ctx.fillStyle = '#76ff03';
+          ctx.fillRect(4, 6, 3, 2);
+          ctx.fillRect(8, 6, 3, 2);
+          ctx.fillRect(4, 9, 3, 2);
+          ctx.fillRect(8, 9, 3, 2);
+          ctx.fillRect(5, 12, 2, 1);
+          ctx.fillRect(8, 12, 2, 1);
+          break;
+        }
+
+        case 'tank': {
+          // TANQUE (Mini Hero Tank - 1-UP Extra Life)
+          // Barrel
+          ctx.fillStyle = '#ffffff';
           ctx.fillRect(7, 1, 2, 5);
-          break;
-        case 'pistol':
+
+          // Turret in center
+          ctx.fillStyle = '#ff9800';
+          ctx.fillRect(5, 5, 6, 5);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(3, 4, 9, 4);
-          ctx.fillRect(7, 8, 4, 6);
+          ctx.fillRect(7, 6, 2, 3); // Hatch
+
+          // Left tread
+          ctx.fillStyle = '#37474f';
+          ctx.fillRect(2, 4, 3, 10);
+          ctx.fillStyle = '#90a4ae';
+          ctx.fillRect(2, 5, 2, 1);
+          ctx.fillRect(2, 8, 2, 1);
+          ctx.fillRect(2, 11, 2, 1);
+
+          // Right tread
+          ctx.fillStyle = '#37474f';
+          ctx.fillRect(11, 4, 3, 10);
+          ctx.fillStyle = '#90a4ae';
+          ctx.fillRect(12, 5, 2, 1);
+          ctx.fillRect(12, 8, 2, 1);
+          ctx.fillRect(12, 11, 2, 1);
+
+          // Front hull glint
+          ctx.fillStyle = '#ffd54f';
+          ctx.fillRect(5, 10, 6, 3);
           break;
-        case 'boat':
-          ctx.fillStyle = '#0078f8';
-          ctx.fillRect(2, 9, 12, 4);
+        }
+
+        case 'pistol': {
+          // PISTOLA (Super Blaster Weapon)
+          // Slide & barrel
+          ctx.fillStyle = '#eceff1';
+          ctx.fillRect(2, 3, 12, 4);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(5, 5, 6, 4);
+          ctx.fillRect(2, 3, 11, 1);
+
+          // Muzzle & front sight
+          ctx.fillStyle = '#90a4ae';
+          ctx.fillRect(2, 2, 2, 1);
+          ctx.fillRect(1, 4, 1, 2);
+
+          // Trigger guard & hammer
+          ctx.fillStyle = '#607d8b';
+          ctx.fillRect(12, 2, 2, 2);
+          ctx.fillRect(6, 7, 1, 3);
+          ctx.fillRect(6, 9, 3, 1);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(8, 7, 1, 2);
+
+          // Checkered Grip (Warm orange/brown)
+          ctx.fillStyle = '#e65100';
+          ctx.fillRect(9, 7, 4, 7);
+          ctx.fillStyle = '#ffb74d';
+          ctx.fillRect(10, 8, 2, 2);
+          ctx.fillRect(10, 11, 2, 2);
           break;
+        }
+
+        case 'boat': {
+          // BARCO (Amphibious Patrol Boat)
+          // Hull
+          ctx.fillStyle = '#0288d1';
+          ctx.fillRect(1, 9, 14, 4);
+          ctx.fillRect(2, 13, 12, 1);
+          ctx.fillRect(0, 9, 2, 2);
+
+          // Cabin & Windshield
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(4, 5, 8, 4);
+          ctx.fillStyle = '#263238';
+          ctx.fillRect(5, 6, 6, 2);
+
+          // Wake spray
+          ctx.fillStyle = '#00e5ff';
+          ctx.fillRect(0, 11, 2, 2);
+          ctx.fillRect(13, 11, 3, 2);
+          break;
+        }
       }
       this.cache.set(`powerup_${type}`, p.canvas);
     });
@@ -927,43 +1123,40 @@ class SpriteManager {
     const py = powerup.y + 8 + bob;
 
     // Glowing aura
-    const aura = ctx.createRadialGradient(px, py, 2, px, py, 11);
-    aura.addColorStop(0, 'rgba(255, 215, 0, 0.5)');
+    const aura = ctx.createRadialGradient(px, py, 2, px, py, 13);
+    aura.addColorStop(0, 'rgba(255, 215, 0, 0.6)');
+    aura.addColorStop(0.5, 'rgba(255, 179, 0, 0.25)');
     aura.addColorStop(1, 'rgba(255, 215, 0, 0)');
     ctx.fillStyle = aura;
     ctx.beginPath();
-    ctx.arc(px, py, 11, 0, Math.PI * 2);
+    ctx.arc(px, py, 13, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rounded crystal capsule badge
-    const badgeGrad = ctx.createLinearGradient(px - 7, py - 7, px + 7, py + 7);
-    badgeGrad.addColorStop(0, '#ffffff');
-    badgeGrad.addColorStop(0.3, '#f5f5f5');
-    badgeGrad.addColorStop(0.8, '#e0e0e0');
-    badgeGrad.addColorStop(1, '#9e9e9e');
-    ctx.fillStyle = badgeGrad;
-    ctx.strokeStyle = '#ffb300';
-    ctx.lineWidth = 1.2;
+    // High-contrast circular medal badge with metallic gold border
+    ctx.fillStyle = 'rgba(17, 19, 29, 0.92)';
+    ctx.beginPath();
+    ctx.arc(px, py, 9.5, 0, Math.PI * 2);
+    ctx.fill();
 
-    if (ctx.roundRect) {
-      ctx.beginPath();
-      ctx.roundRect(px - 6.5, py - 6.5, 13, 13, 3);
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      ctx.fillRect(px - 6.5, py - 6.5, 13, 13);
-    }
+    // Metallic gold rim
+    const rimGrad = ctx.createLinearGradient(px - 9, py - 9, px + 9, py + 9);
+    rimGrad.addColorStop(0, '#ffffff');
+    rimGrad.addColorStop(0.35, '#ffd700');
+    rimGrad.addColorStop(1, '#ff8f00');
+    ctx.strokeStyle = rimGrad;
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
 
-    // Classic icon centered inside capsule
+    // Draw crisp sprite at native 16x16 size, centered without blurry downscaling!
     const spr = this.cache.get(`powerup_${powerup.type}`);
     if (spr) {
-      ctx.drawImage(spr, 0, 0, 16, 16, px - 5.5, py - 5.5, 11, 11);
+      ctx.drawImage(spr, Math.round(px - 8), Math.round(py - 8));
     }
 
-    // Specular shine glint
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    // Specular shine glint at top-left
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
     ctx.beginPath();
-    ctx.ellipse(px - 2.5, py - 3.5, 3, 1.2, -0.4, 0, Math.PI * 2);
+    ctx.arc(px - 4, py - 4, 1.8, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
