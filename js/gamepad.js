@@ -235,8 +235,11 @@ class GamepadManager {
           if (!game.gameOverMenuReady || (game.gameOverLockTimer && game.gameOverLockTimer > 0)) {
             return;
           }
-          if (upJustPressed || downJustPressed) {
-            game.gameOverMenuIndex = (game.gameOverMenuIndex + 1) % 2;
+          if (upJustPressed) {
+            game.gameOverMenuIndex = (game.gameOverMenuIndex + 2) % 3;
+            window.soundSystem.playShot();
+          } else if (downJustPressed) {
+            game.gameOverMenuIndex = (game.gameOverMenuIndex + 1) % 3;
             window.soundSystem.playShot();
           }
           if (startJustPressed || aJustPressed) {

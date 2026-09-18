@@ -446,7 +446,7 @@ class UIManager {
     ctx.restore();
   }
 
-  drawGameOver(ctx, y, isModern = true, scale = 4, menuIndex = 0, menuReady = false, isTwoPlayer = false) {
+  drawGameOver(ctx, y, isModern = true, scale = 4, menuIndex = 0, menuReady = false, isTwoPlayer = false, stageNum = 1, lockTimer = 0) {
     const W = 256 * scale;
     ctx.save();
     ctx.textAlign = 'center';
@@ -461,13 +461,13 @@ class UIManager {
 
     // Interactive Restart Menu Modal
     if (menuReady) {
-      const dw = 560;
-      const dh = 240;
+      const dw = 620;
+      const dh = 270;
       const dx = (W - dw) / 2;
-      const dy = 440;
+      const dy = 420;
 
       // Card Background
-      ctx.fillStyle = 'rgba(10, 12, 20, 0.92)';
+      ctx.fillStyle = 'rgba(10, 12, 20, 0.94)';
       ctx.strokeStyle = '#00e5ff';
       ctx.lineWidth = 2;
       if (ctx.roundRect) {
@@ -482,58 +482,60 @@ class UIManager {
 
       // Title in Card
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 13px "Press Start 2P", monospace';
-      ctx.fillText('FIM DE JOGO - O QUE DESEJA FAZER?', W / 2, dy + 40);
+      ctx.font = 'bold 12px "Press Start 2P", monospace';
+      ctx.fillText('FIM DE JOGO - O QUE DESEJA FAZER?', W / 2, dy + 36);
 
-      // Option 1: Nova Partida
-      const opt1Y = dy + 70;
-      const isOpt1 = (menuIndex === 0);
-      if (isOpt1) {
-        ctx.fillStyle = 'rgba(255, 235, 59, 0.15)';
-        ctx.strokeStyle = '#ffeb3b';
-        ctx.lineWidth = 1.5;
-        if (ctx.roundRect) {
-          ctx.beginPath();
-          ctx.roundRect(dx + 30, opt1Y, dw - 60, 42, 8);
-          ctx.fill();
-          ctx.stroke();
-        } else {
-          ctx.fillRect(dx + 30, opt1Y, dw - 60, 42);
-          ctx.strokeRect(dx + 30, opt1Y, dw - 60, 42);
-        }
-      }
-      ctx.fillStyle = isOpt1 ? '#ffeb3b' : '#90caf9';
-      ctx.font = 'bold 12px "Press Start 2P", sans-serif';
-      const opt1Label = (isTwoPlayer ? '▶ NOVA PARTIDA (2 PLAYERS)' : '▶ NOVA PARTIDA');
-      ctx.fillText(isOpt1 ? opt1Label : opt1Label.replace('▶ ', '  '), W / 2, opt1Y + 26);
+      const totalStages = (window.mapManager && window.mapManager.stages) ? window.mapManager.stages.length : 50;
+      const curStage = stageNum || 1;
+      const nextStage = (curStage % totalStages) + 1;
 
-      // Option 2: Menu Principal
-      const opt2Y = dy + 124;
-      const isOpt2 = (menuIndex === 1);
-      if (isOpt2) {
-        ctx.fillStyle = 'rgba(255, 235, 59, 0.15)';
-        ctx.strokeStyle = '#ffeb3b';
-        ctx.lineWidth = 1.5;
-        if (ctx.roundRect) {
-          ctx.beginPath();
-          ctx.roundRect(dx + 30, opt2Y, dw - 60, 42, 8);
-          ctx.fill();
-          ctx.stroke();
-        } else {
-          ctx.fillRect(dx + 30, opt2Y, dw - 60, 42);
-          ctx.strokeRect(dx + 30, opt2Y, dw - 60, 42);
+      const options = [
+        {
+          label: isTwoPlayer ? `▶ REINICIAR NA MESMA FASE (${curStage}) [2P]` : `▶ REINICIAR NA MESMA FASE (${curStage})`,
+          y: dy + 56
+        },
+        {
+          label: isTwoPlayer ? `▶ REINICIAR NA FASE POSTERIOR (${nextStage}) [2P]` : `▶ REINICIAR NA FASE POSTERIOR (${nextStage})`,
+          y: dy + 108
+        },
+        {
+          label: '▶ MENU PRINCIPAL',
+          y: dy + 160
         }
-      }
-      ctx.fillStyle = isOpt2 ? '#ffeb3b' : '#90caf9';
-      ctx.font = 'bold 12px "Press Start 2P", sans-serif';
-      const opt2Label = '▶ MENU PRINCIPAL';
-      ctx.fillText(isOpt2 ? opt2Label : '  MENU PRINCIPAL', W / 2, opt2Y + 26);
+      ];
+
+      options.forEach((opt, idx) => {
+        const isSelected = (menuIndex === idx);
+        if (isSelected) {
+          ctx.fillStyle = 'rgba(255, 235, 59, 0.18)';
+          ctx.strokeStyle = '#ffeb3b';
+          ctx.lineWidth = 1.5;
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(dx + 25, opt.y, dw - 50, 40, 8);
+            ctx.fill();
+            ctx.stroke();
+          } else {
+            ctx.fillRect(dx + 25, opt.y, dw - 50, 40);
+            ctx.strokeRect(dx + 25, opt.y, dw - 50, 40);
+          }
+        }
+
+        ctx.fillStyle = isSelected ? '#ffeb3b' : '#90caf9';
+        ctx.font = 'bold 11px "Press Start 2P", sans-serif';
+        const text = isSelected ? opt.label : opt.label.replace('▶ ', '  ');
+        ctx.fillText(text, W / 2, opt.y + 25);
+      });
 
       // Footer Hint
       ctx.fillStyle = '#607d8b';
       ctx.font = '9px "Press Start 2P", monospace';
-      ctx.fillText('[ENTER / START / CLIQUE] CONFIRMAR', W / 2, dy + 195);
-      ctx.fillText('[ESC / SELECT] VOLTAR AO MENU', W / 2, dy + 218);
+      ctx.fillText('[ENTER / START / CLIQUE] CONFIRMAR', W / 2, dy + 224);
+      ctx.fillText('[ESC / SELECT] VOLTAR AO MENU', W / 2, dy + 246);
+    } else if (lockTimer > 0) {
+      ctx.fillStyle = '#ff8a80';
+      ctx.font = 'bold 12px "Press Start 2P", monospace';
+      ctx.fillText(`AGUARDE... ${Math.ceil(lockTimer)}s`, W / 2, (y * scale) + 65);
     }
 
     ctx.restore();

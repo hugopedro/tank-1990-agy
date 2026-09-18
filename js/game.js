@@ -175,11 +175,11 @@ class Game {
         }
 
         if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-          this.gameOverMenuIndex = (this.gameOverMenuIndex + 1) % 2;
+          this.gameOverMenuIndex = (this.gameOverMenuIndex + 2) % 3;
           window.soundSystem.playShot();
           return;
         } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
-          this.gameOverMenuIndex = (this.gameOverMenuIndex + 1) % 2;
+          this.gameOverMenuIndex = (this.gameOverMenuIndex + 1) % 3;
           window.soundSystem.playShot();
           return;
         } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'j' || e.key === 'J') {
@@ -247,12 +247,15 @@ class Game {
           const clickX = (e.clientX - rect.left) * scaleX;
           const clickY = (e.clientY - rect.top) * scaleY;
 
-          if (clickX >= 250 && clickX <= 774) {
-            if (clickY >= 500 && clickY <= 555) {
+          if (clickX >= 220 && clickX <= 804) {
+            if (clickY >= 470 && clickY < 525) {
               this.gameOverMenuIndex = 0;
               this._selectGameOverOption();
-            } else if (clickY >= 556 && clickY <= 615) {
+            } else if (clickY >= 525 && clickY < 578) {
               this.gameOverMenuIndex = 1;
+              this._selectGameOverOption();
+            } else if (clickY >= 578 && clickY <= 635) {
+              this.gameOverMenuIndex = 2;
               this._selectGameOverOption();
             }
           }
@@ -1134,35 +1137,47 @@ class Game {
       this.scale,
       this.gameOverMenuIndex,
       this.gameOverMenuReady,
-      this.isTwoPlayer
+      this.isTwoPlayer,
+      this.currentStage,
+      this.gameOverLockTimer
     );
   }
 
   _selectGameOverOption() {
     if (this.gameOverMenuIndex === 0) {
-      this.restartGame(this.isTwoPlayer);
+      // Reiniciar na mesma fase
+      this.restartGame(this.isTwoPlayer, this.currentStage);
+      if (window.soundSystem) window.soundSystem.playScoreDing();
+    } else if (this.gameOverMenuIndex === 1) {
+      // Reiniciar na fase posterior
+      const totalStages = (window.mapManager && window.mapManager.stages) ? window.mapManager.stages.length : 50;
+      const nextStage = (this.currentStage % totalStages) + 1;
+      this.restartGame(this.isTwoPlayer, nextStage);
       if (window.soundSystem) window.soundSystem.playScoreDing();
     } else {
+      // Menu Principal
       this.state = GAME_STATES.TITLE;
       if (window.uiManager) window.uiManager.resetTitleIntro();
       if (window.soundSystem) window.soundSystem.playPause();
     }
   }
 
-  restartGame(twoPlayer = false) {
+  restartGame(twoPlayer = false, targetStage = 1) {
+    const stageToStart = targetStage || 1;
     this.isTwoPlayer = Boolean(twoPlayer);
-    this.currentStage = 1;
+    this.currentStage = stageToStart;
     this.playerLives = [3, 3];
     this.playerScores = [0, 0];
     this.gameOverMenuIndex = 0;
     this.gameOverMenuReady = false;
-    this.startStage(1, false);
+    this.gameOverLockTimer = 0;
+    this.startStage(stageToStart, false);
 
     if (window.multiplayerManager && window.multiplayerManager.isConnected) {
       if (window.multiplayerManager.mode === 'HOST') {
-        window.multiplayerManager.broadcastRestart(1);
+        window.multiplayerManager.broadcastRestart(stageToStart);
       } else if (window.multiplayerManager.mode === 'CLIENT') {
-        window.multiplayerManager.requestRestart();
+        window.multiplayerManager.requestRestart(stageToStart);
       }
     }
   }

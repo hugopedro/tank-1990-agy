@@ -261,6 +261,9 @@ class MultiplayerManager {
         this.game.playerLives = [3, 3];
         if (data.type === 'RESTART') {
           this.game.playerScores = [0, 0];
+          this.game.gameOverMenuReady = false;
+          this.game.gameOverLockTimer = 0;
+          this.game.gameOverMenuIndex = 0;
         }
         this.game.startStage(data.stage || 1, false);
         if (window.mapManager && data.grid) {
@@ -486,7 +489,8 @@ class MultiplayerManager {
         }
       }
       if (data.type === 'REQUEST_RESTART') {
-        this.game.restartGame(true);
+        const stage = data.stage || this.game.currentStage || 1;
+        this.game.restartGame(true, stage);
       }
     }
   }
@@ -820,10 +824,11 @@ class MultiplayerManager {
     }
   }
 
-  requestRestart() {
+  requestRestart(stage = 1) {
     if (this.mode === 'CLIENT' && this.conn && this.conn.open) {
       this.conn.send({
-        type: 'REQUEST_RESTART'
+        type: 'REQUEST_RESTART',
+        stage: stage
       });
     }
   }
