@@ -155,6 +155,18 @@ class MapManager {
     this.setSubTile(13, 25, 9);
   }
 
+  isBase(tx, ty) {
+    // Eagle: 2x2 sub-tiles (12, 24), (13, 24), (12, 25), (13, 25)
+    if (tx >= 12 && tx <= 13 && ty >= 24 && ty <= 25) return true;
+    if (this.getSubTile(tx, ty) === 9) return true;
+    // Base fortress cells around eagle
+    for (let i = 0; i < this.baseFortressCells.length; i++) {
+      const c = this.baseFortressCells[i];
+      if (c.x === tx && c.y === ty) return true;
+    }
+    return false;
+  }
+
   draw(ctx, layer = 'bottom', isModern = true, time = 0) {
     // layer: 'bottom' (ground, brick, steel, water, ice, eagle)
     // layer: 'top' (trees only, which overlay tanks and bullets!)

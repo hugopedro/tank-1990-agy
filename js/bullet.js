@@ -55,9 +55,22 @@ class Bullet {
     let hitBrick = false;
     let hitEagle = false;
 
+    const isPlayerBullet = (this.owner === 'player1' || this.owner === 'player2');
+
     hitPoints.forEach(pt => {
       const tx = Math.floor(pt.x / 8);
       const ty = Math.floor(pt.y / 8);
+
+      // Protect the base: Player 1 and Player 2 ammunition does NOT hit the base!
+      if (isPlayerBullet) {
+        if (map.isBase && map.isBase(tx, ty)) {
+          return;
+        }
+        if (map.getSubTile(tx, ty) === 9) {
+          return;
+        }
+      }
+
       const tile = map.getSubTile(tx, ty);
 
       if (tile === 1) { // Brick
@@ -76,8 +89,10 @@ class Bullet {
         // Tank 1990 feature: Super tank can cut through trees
         map.setSubTile(tx, ty, 0);
       } else if (tile === 9) { // Eagle / Base
-        hitSolid = true;
-        hitEagle = true;
+        if (!isPlayerBullet) {
+          hitSolid = true;
+          hitEagle = true;
+        }
       }
     });
 
